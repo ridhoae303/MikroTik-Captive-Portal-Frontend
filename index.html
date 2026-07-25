@@ -3,252 +3,280 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hotspot Login</title>
+    <meta name="description" content="Modern Mikrotik Hotspot Login Template">
+    <meta name="author" content="Rislam Febriansah Putra">
+    <title>Hotspot Login | Zizu Network</title>
+    
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
-        /* === VARIABEL & THEME === */
+        /* === VARIABEL & THEME GLASSMORPHISM === */
         :root {
-            --primary: #0088ff;
-            --primary-glow: rgba(0, 136, 255, 0.4);
-            --accent: #00f2fe;
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.5);
+            --accent: #06b6d4;
             --success: #10b981;
             --bg-dark: #0f172a;
-            --card-bg: rgba(255, 255, 255, 0.85);
             --text-main: #1e293b;
             --text-sub: #64748b;
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            background-color: var(--bg-dark);
+            background-color: #e2e8f0;
+            /* Animated Mesh Gradient Background */
             background-image: 
-                radial-gradient(at 0% 0%, rgba(0, 242, 254, 0.15) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(0, 136, 255, 0.2) 0px, transparent 50%);
+                radial-gradient(at 40% 20%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 80% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 0% 50%, rgba(6, 182, 212, 0.15) 0px, transparent 50%);
             background-attachment: fixed;
             display: flex;
             justify-content: center;
             min-height: 100vh;
+            color: var(--text-main);
         }
 
         /* === CONTAINER === */
         .app-container {
             width: 100%;
             max-width: 440px;
-            background: #f8fafc;
             min-height: 100vh;
             position: relative;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.05);
             padding-bottom: 90px;
             overflow-x: hidden;
+            background: rgba(248, 250, 252, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
 
-        /* === SIDEBAR & OVERLAY (KIRI) === */
+        /* === SIDEBAR KIRI === */
         .sidebar-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
-            z-index: 9998; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+            background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px);
+            z-index: 9998; opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
         }
         .sidebar-overlay.active { opacity: 1; pointer-events: all; }
         
         .sidebar {
             position: fixed; top: 0; left: 0; width: 280px; height: 100%;
-            background: linear-gradient(180deg, #06b6d4 0%, #3b82f6 100%);
-            z-index: 9999; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 10px 0 30px rgba(0,0,0,0.2); display: flex; flex-direction: column;
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px);
+            z-index: 9999; transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 10px 0 30px rgba(0,0,0,0.1); display: flex; flex-direction: column;
+            border-right: 1px solid var(--glass-border);
         }
         .sidebar.active { transform: translateX(0); }
         
-        .sidebar-header { padding: 30px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .sidebar-header .logo-badge { width: 50px; height: 50px; font-size: 1.2rem; }
-        .sidebar-header-text h3 { color: white; font-size: 1.2rem; margin-bottom: 4px; }
-        .sidebar-header-text p { color: rgba(255,255,255,0.8); font-size: 0.85rem; font-weight: 500; }
+        .sidebar-header { padding: 30px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .sidebar-header .logo-badge { width: 48px; height: 48px; font-size: 1.2rem; background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+        .sidebar-header-text h3 { color: var(--text-main); font-size: 1.2rem; font-weight: 800; margin-bottom: 2px; }
+        .sidebar-header-text p { color: var(--text-sub); font-size: 0.85rem; font-weight: 500; }
         
-        .sidebar-wa-box { background: rgba(255, 255, 255, 0.15); margin: 20px; padding: 16px; border-radius: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.2); }
+        .sidebar-wa-box { background: linear-gradient(135deg, #25D366, #128C7E); margin: 20px; padding: 16px; border-radius: 16px; text-align: center; box-shadow: 0 10px 20px rgba(37, 211, 102, 0.2); }
         .sidebar-wa-box p { color: white; font-size: 0.85rem; margin-bottom: 10px; font-weight: 600; }
-        .sidebar-wa-btn {
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            background: #25D366; color: white; text-decoration: none; padding: 10px;
-            border-radius: 10px; font-weight: 800; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);
-        }
+        .sidebar-wa-btn { display: flex; align-items: center; justify-content: center; gap: 8px; background: white; color: #128C7E; text-decoration: none; padding: 10px; border-radius: 10px; font-weight: 800; font-size: 0.9rem; transition: transform 0.2s; }
+        .sidebar-wa-btn:active { transform: scale(0.95); }
 
         .sidebar-menu { list-style: none; padding: 10px 20px; flex: 1; }
-        .sidebar-menu li {
-            padding: 16px 12px; color: white; font-size: 1rem; font-weight: 600;
-            display: flex; align-items: center; gap: 12px; cursor: pointer;
-            border-radius: 12px; transition: background 0.2s; margin-bottom: 4px;
-        }
-        .sidebar-menu li:hover, .sidebar-menu li:active { background: rgba(255, 255, 255, 0.15); }
-        .sidebar-menu li svg { width: 20px; height: 20px; opacity: 0.9; }
-        .sidebar-footer { padding: 20px; text-align: center; color: rgba(255,255,255,0.6); font-size: 0.75rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-menu li { padding: 14px 16px; color: var(--text-main); font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 14px; cursor: pointer; border-radius: 12px; transition: all 0.2s; margin-bottom: 6px; }
+        .sidebar-menu li:hover, .sidebar-menu li:active { background: rgba(59, 130, 246, 0.1); color: var(--primary); }
+        .sidebar-menu li svg { width: 22px; height: 22px; opacity: 0.8; }
+        
+        .sidebar-footer { padding: 20px; text-align: center; color: var(--text-sub); font-size: 0.75rem; border-top: 1px solid rgba(0,0,0,0.05); font-weight: 500; }
 
-        /* === NAVBAR UTAMA === */
+        /* === NAVBAR KACA (GLASSMORPHISM) === */
         .navbar {
-            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px);
+            background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
             padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;
-            position: sticky; top: 0; z-index: 50; border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            position: sticky; top: 0; z-index: 50; border-bottom: 1px solid var(--glass-border);
         }
 
         .navbar-left { display: flex; align-items: center; gap: 14px; }
-        .hamburger-btn { background: none; border: none; color: var(--primary); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .hamburger-btn { background: none; border: none; color: var(--text-main); cursor: pointer; display: flex; transition: color 0.2s; }
+        .hamburger-btn:active { color: var(--primary); }
         
-        .logo { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 1.25rem; color: var(--text-main); letter-spacing: -0.5px; }
-        .logo-badge {
-            width: 36px; height: 36px; background: linear-gradient(135deg, #10b981, #059669);
-            color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-        }
+        .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; }
+        .logo-badge { width: 32px; height: 32px; background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; }
 
-        .navbar-right { display: flex; align-items: center; gap: 10px; }
-
-        /* === DROPDOWN KANAN ATAS (BARU) === */
+        /* === DROPDOWN KANAN === */
         .dropdown { position: relative; }
-        
         .dropdown-btn {
-            background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 10px;
-            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; color: var(--text-main); transition: all 0.2s ease;
+            background: white; border: 1px solid rgba(0,0,0,0.05); border-radius: 12px;
+            width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--text-main); transition: all 0.2s; box-shadow: 0 2px 10px rgba(0,0,0,0.02);
         }
-        
-        .dropdown-btn:active { transform: scale(0.95); background: #e2e8f0; }
+        .dropdown-btn:active { transform: scale(0.92); }
         
         .dropdown-menu {
-            position: absolute; top: 52px; right: 0; width: 230px; background: white;
-            border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+            position: absolute; top: 56px; right: 0; width: 240px; 
+            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px);
+            border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             display: flex; flex-direction: column; opacity: 0; pointer-events: none;
-            transform: translateY(-10px); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 1000; overflow: hidden; border: 1px solid #f1f5f9;
+            transform: translateY(-15px) scale(0.95); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 1000; overflow: hidden; border: 1px solid var(--glass-border); transform-origin: top right;
         }
-        
-        .dropdown-menu.active { opacity: 1; pointer-events: all; transform: translateY(0); }
+        .dropdown-menu.active { opacity: 1; pointer-events: all; transform: translateY(0) scale(1); }
         
         .dropdown-menu a {
             padding: 16px 20px; color: var(--text-main); text-decoration: none;
-            font-size: 0.95rem; font-weight: 600; border-bottom: 1px solid #f8fafc;
-            transition: background 0.2s; display: block;
+            font-size: 0.95rem; font-weight: 600; border-bottom: 1px solid rgba(0,0,0,0.03);
+            transition: background 0.2s, padding-left 0.2s; display: block;
         }
+        .dropdown-menu a:hover { background: rgba(0,0,0,0.02); color: var(--primary); padding-left: 24px; }
         
-        .dropdown-menu a:hover { background: #f8fafc; color: var(--primary); }
-        
-        .dropdown-menu .admin-box { padding: 16px; background: #fafafa; }
-        
+        .dropdown-menu .admin-box { padding: 16px; background: rgba(0,0,0,0.01); }
         .admin-btn {
-            width: 100%; padding: 14px; background: linear-gradient(135deg, #6366f1, #4f46e5); /* Warna gradasi ungu/biru */
-            color: white; border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 800;
-            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 6px 15px rgba(79, 70, 229, 0.3);
+            width: 100%; padding: 14px; background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: white; border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 700;
+            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 8px 15px rgba(15, 23, 42, 0.2);
         }
+        .admin-btn:active { transform: scale(0.96); box-shadow: 0 4px 10px rgba(15, 23, 42, 0.3); }
+
+        /* === HERO CAROUSEL === */
+        .slider-container { margin: 20px 16px 12px; position: relative; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px rgba(59, 130, 246, 0.15); z-index: 10; border: 1px solid rgba(255,255,255,0.4); }
+        .slider-wrapper { display: flex; transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1); width: 100%; }
+        .slide { min-width: 100%; padding: 30px 24px; color: white; display: flex; align-items: center; justify-content: space-between; min-height: 140px; }
+        .slide.slide-1 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .slide.slide-2 { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); }
+        .slide.slide-3 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
         
-        .admin-btn:active { transform: scale(0.96); box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2); }
+        .slide-text h2 { font-size: 1.1rem; font-weight: 800; line-height: 1.2; margin-bottom: 4px; letter-spacing: -0.3px; }
+        .slide-text h3 { font-size: 1.7rem; font-weight: 900; margin-bottom: 6px; text-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .slide-text p { font-size: 0.85rem; font-weight: 500; opacity: 0.9; }
+        .slide-icon { font-size: 3.5rem; opacity: 0.9; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.1)); }
 
-        /* === HERO CAROUSEL / SLIDER === */
-        .slider-container { margin: 16px 16px 8px; position: relative; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 114, 255, 0.2); z-index: 10; }
-        .slider-wrapper { display: flex; transition: transform 0.4s ease-in-out; width: 100%; }
-        .slide { min-width: 100%; padding: 24px 20px; color: white; display: flex; align-items: center; justify-content: space-between; min-height: 120px; }
-        .slide.slide-1 { background: linear-gradient(135deg, #56ccf2 0%, #2f80ed 100%); }
-        .slide.slide-2 { background: linear-gradient(135deg, #4776e6 0%, #8e54e9 100%); }
-        .slide.slide-3 { background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%); }
-        .slide-text h2 { font-size: 1.15rem; font-weight: 800; line-height: 1.2; margin-bottom: 4px; }
-        .slide-text h3 { font-size: 1.5rem; font-weight: 900; margin-bottom: 6px; }
-        .slide-text p { font-size: 0.8rem; opacity: 0.9; }
-        .slide-icon { font-size: 3rem; opacity: 0.85; user-select: none; }
-        .dots-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 16px; }
-        .dot { width: 8px; height: 8px; background-color: #cbd5e1; border-radius: 50%; transition: all 0.3s ease; cursor: pointer; }
-        .dot.active { background-color: var(--primary); width: 20px; border-radius: 10px; }
+        .dots-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; }
+        .dot { width: 8px; height: 8px; background-color: rgba(0,0,0,0.1); border-radius: 50%; transition: all 0.4s ease; cursor: pointer; }
+        .dot.active { background-color: var(--primary); width: 24px; border-radius: 12px; }
 
-        /* === QUICK MENUS === */
+        /* === QUICK MENUS GLASS === */
         .quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 0 16px 24px; position: relative; z-index: 20; }
         .quick-item {
-            background: white; padding: 16px 10px; border-radius: 16px; text-align: center;
-            cursor: pointer; border: 1px solid #f1f5f9; transition: all 0.2s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px);
+            padding: 16px 10px; border-radius: 20px; text-align: center;
+            cursor: pointer; border: 1px solid rgba(255,255,255,0.8);
+            transition: all 0.3s ease; box-shadow: 0 8px 20px rgba(0,0,0,0.03);
         }
-        .quick-item:active { transform: scale(0.95); }
+        .quick-item:active { transform: translateY(2px) scale(0.96); }
         .quick-icon {
-            width: 44px; height: 44px; margin: 0 auto 8px; border-radius: 12px;
-            background: #0088ff; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+            width: 48px; height: 48px; margin: 0 auto 10px; border-radius: 14px;
+            background: linear-gradient(135deg, #eff6ff, #dbeafe); color: var(--primary);
+            display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.5);
         }
-        .quick-label { font-size: 0.75rem; font-weight: 700; color: var(--primary); }
+        .quick-label { font-size: 0.75rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.2px; }
 
-        /* === LOGIN CARD === */
+        /* === LOGIN CARD GLASS === */
         .login-card {
-            margin: 0 16px 20px; background: white; border-radius: 20px; padding: 24px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; position: relative; z-index: 20;
+            margin: 0 16px 20px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px);
+            border-radius: 24px; padding: 28px 24px; box-shadow: var(--glass-shadow);
+            border: 1px solid var(--glass-border); position: relative; z-index: 20;
         }
-        .login-card h3 { font-size: 1.1rem; color: var(--text-main); margin-bottom: 18px; text-align: center; }
+        .login-card h3 { font-size: 1.2rem; color: var(--text-main); margin-bottom: 20px; text-align: center; font-weight: 800; }
+        
         .input-wrapper { position: relative; margin-bottom: 16px; }
         .input-wrapper input {
-            width: 100%; padding: 16px; border: 2px solid #e2e8f0; border-radius: 14px; font-size: 0.95rem;
-            font-weight: 600; text-align: center; outline: none; transition: all 0.3s ease; background: #f8fafc; color: var(--text-main);
+            width: 100%; padding: 18px; border: 2px solid transparent; border-radius: 16px;
+            font-size: 1rem; font-weight: 600; text-align: center; outline: none;
+            transition: all 0.3s ease; background: rgba(255, 255, 255, 0.9); color: var(--text-main);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
         }
-        .input-wrapper input::placeholder { color: #94a3b8; font-weight: 500; text-transform: none; }
-        .input-wrapper input:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 4px var(--primary-glow); }
+        .input-wrapper input::placeholder { color: #94a3b8; font-weight: 500; }
+        .input-wrapper input:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 4px var(--primary-glow); transform: translateY(-2px); }
+        
         .btn-submit {
-            width: 100%; padding: 16px; background: #00aeff; color: white; border: none;
-            border-radius: 14px; font-size: 1rem; font-weight: 800; cursor: pointer;
-            box-shadow: 0 8px 20px rgba(0, 174, 255, 0.3); transition: transform 0.2s ease, box-shadow 0.2s ease;
+            width: 100%; padding: 18px; background: linear-gradient(135deg, var(--primary), #2563eb);
+            color: white; border: none; border-radius: 16px; font-size: 1.05rem; font-weight: 800;
+            cursor: pointer; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+            transition: all 0.3s ease; letter-spacing: 0.5px;
         }
-        .btn-submit:active { transform: scale(0.98); }
+        .btn-submit:active { transform: scale(0.97); box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3); }
 
-        /* === MODERN LOADING OVERLAY === */
+        /* === MODERN LOADING === */
         .loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); z-index: 99999;
-            display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+            background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(12px); z-index: 99999;
+            display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
         }
         .loading-overlay.active { opacity: 1; pointer-events: all; }
-        .loading-card { background: white; padding: 30px; border-radius: 20px; text-align: center; width: 80%; max-width: 300px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); transform: translateY(20px); transition: transform 0.3s ease; }
-        .loading-overlay.active .loading-card { transform: translateY(0); }
-        .spinner { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+        .loading-card {
+            background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); padding: 35px 30px;
+            border-radius: 24px; text-align: center; width: 85%; max-width: 320px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2); transform: translateY(30px) scale(0.95); transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .loading-overlay.active .loading-card { transform: translateY(0) scale(1); }
+        .spinner {
+            width: 56px; height: 56px; border: 6px solid #e2e8f0; border-top: 6px solid var(--primary);
+            border-radius: 50%; animation: spin 1s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite; margin: 0 auto 20px;
+        }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .loading-card h4 { font-size: 1.1rem; color: var(--text-main); margin-bottom: 6px; }
-        .loading-card p { font-size: 0.85rem; color: var(--text-sub); }
+        .loading-card h4 { font-size: 1.2rem; color: var(--text-main); margin-bottom: 8px; font-weight: 800; }
+        .loading-card p { font-size: 0.9rem; color: var(--text-sub); font-weight: 500; }
 
-        /* === PACKAGE CARDS === */
-        .section-header { padding: 0 20px; margin-bottom: 12px; font-size: 0.8rem; font-weight: 800; color: var(--text-sub); letter-spacing: 0.5px; text-transform: uppercase; }
-        .pkg-card { margin: 0 16px 14px; background: white; border-radius: 18px; overflow: hidden; border: 1px solid #f1f5f9; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
-        .pkg-top { padding: 16px 20px; color: white; display: flex; justify-content: space-between; align-items: center; }
+        /* === PACKAGE & STATUS UI === */
+        .section-header { padding: 0 20px; margin-bottom: 16px; font-size: 0.85rem; font-weight: 800; color: var(--text-sub); letter-spacing: 0.5px; text-transform: uppercase; }
+        .pkg-card { margin: 0 16px 16px; background: rgba(255,255,255,0.7); backdrop-filter: blur(16px); border-radius: 24px; overflow: hidden; border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow); transition: transform 0.3s; }
+        .pkg-card:active { transform: scale(0.98); }
+        .pkg-top { padding: 20px; color: white; display: flex; justify-content: space-between; align-items: center; }
         .pkg-top.purple { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
         .pkg-top.blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
-        .pkg-title { font-size: 1.1rem; font-weight: 800; }
-        .pkg-sub { font-size: 0.75rem; opacity: 0.8; }
-        .pkg-badge { background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(4px); padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; }
-        .pkg-bottom { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; }
-        .pkg-price { font-size: 1.3rem; font-weight: 800; color: var(--text-main); }
-        .pkg-price span { font-size: 0.75rem; color: var(--text-sub); font-weight: 500; }
-        .btn-buy-pkg { padding: 10px 20px; border-radius: 10px; color: white; text-decoration: none; font-weight: 800; font-size: 0.85rem; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .btn-buy-pkg.purple { background: #8b5cf6; }
-        .btn-buy-pkg.blue { background: #3b82f6; }
+        .pkg-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 4px; }
+        .pkg-sub { font-size: 0.8rem; font-weight: 500; opacity: 0.9; }
+        .pkg-badge { background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(4px); padding: 6px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; }
+        .pkg-bottom { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .pkg-price { font-size: 1.4rem; font-weight: 800; color: var(--text-main); }
+        .pkg-price span { font-size: 0.8rem; color: var(--text-sub); font-weight: 600; }
+        .btn-buy-pkg { padding: 12px 24px; border-radius: 14px; color: white; text-decoration: none; font-weight: 800; font-size: 0.9rem; transition: transform 0.2s; }
+        .btn-buy-pkg:active { transform: scale(0.95); }
+        .btn-buy-pkg.purple { background: #8b5cf6; box-shadow: 0 8px 15px rgba(139, 92, 246, 0.3); }
+        .btn-buy-pkg.blue { background: #3b82f6; box-shadow: 0 8px 15px rgba(59, 130, 246, 0.3); }
 
-        /* === STATUS & FORM UI === */
-        .status-box { background: white; margin: 20px 16px; padding: 30px 24px; border-radius: 20px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; }
-        .status-box h3 { color: var(--text-main); margin-bottom: 10px; font-size: 1.2rem; }
-        .status-box p { color: var(--text-sub); font-size: 0.85rem; margin-bottom: 24px; line-height: 1.5; }
-        .result-card { display: none; margin-top: 20px; padding: 16px; border-radius: 14px; text-align: left; background: #f0fdf4; border: 1px solid #bbf7d0; animation: slideUp 0.3s ease; }
-        .result-card h4 { color: #166534; font-size: 0.9rem; margin-bottom: 8px; }
-        .result-card p { color: #15803d; font-size: 0.8rem; margin: 0; line-height: 1.4; }
+        .status-box { background: rgba(255,255,255,0.7); backdrop-filter: blur(16px); margin: 20px 16px; padding: 30px 24px; border-radius: 24px; text-align: center; box-shadow: var(--glass-shadow); border: 1px solid var(--glass-border); }
+        .status-box h3 { color: var(--text-main); margin-bottom: 12px; font-size: 1.3rem; font-weight: 800; }
+        .status-box p { color: var(--text-sub); font-size: 0.9rem; margin-bottom: 24px; line-height: 1.6; font-weight: 500; }
+        .result-card { display: none; margin-top: 24px; padding: 20px; border-radius: 16px; text-align: left; background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 1px solid #bbf7d0; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 10px 20px rgba(22, 101, 52, 0.05); }
+        .result-card h4 { color: #166534; font-size: 1rem; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .result-card p { color: #15803d; font-size: 0.85rem; margin: 0; line-height: 1.6; font-weight: 600; }
 
-        /* === BOTTOM NAV === */
+        /* === BOTTOM NAV GLASS === */
         .bottom-nav {
             position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%;
-            max-width: 440px; height: 70px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px);
-            display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #e2e8f0; z-index: 40;
+            max-width: 440px; height: 75px; 
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            display: flex; justify-content: space-around; align-items: center; 
+            border-top: 1px solid var(--glass-border); z-index: 40;
+            padding-bottom: env(safe-area-inset-bottom);
         }
-        .nav-btn { display: flex; align-items: center; justify-content: center; color: #94a3b8; cursor: pointer; border: none; background: none; width: 60px; height: 100%; }
-        .nav-btn.active { color: #00aeff; }
-        .nav-btn svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .nav-btn { display: flex; align-items: center; justify-content: center; color: #94a3b8; cursor: pointer; border: none; background: none; width: 60px; height: 100%; transition: color 0.3s; }
+        .nav-btn.active { color: var(--primary); }
+        .nav-btn svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.2s; }
+        .nav-btn:active svg { transform: scale(0.9); }
+        
         .nav-center-btn {
-            width: 56px; height: 56px; background: linear-gradient(135deg, #00c6ff, #0072ff); border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 8px 20px rgba(0, 114, 255, 0.4);
-            transform: translateY(-16px); cursor: pointer; border: 4px solid white;
+            width: 60px; height: 60px; background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;
+            box-shadow: 0 10px 25px var(--primary-glow); transform: translateY(-20px); cursor: pointer; 
+            border: 5px solid #f8fafc; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
+        .nav-center-btn:active { transform: translateY(-15px) scale(0.95); box-shadow: 0 5px 15px var(--primary-glow); }
 
         /* TAB PAGES */
         .page { display: none; }
-        .page.active { display: block; animation: slideUp 0.3s ease; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .page.active { display: block; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -259,7 +287,7 @@
     <div class="sidebar-header">
         <div class="logo-badge">&gt;_</div>
         <div class="sidebar-header-text">
-            <h3>Rislam Zizu Hotspot</h3>
+            <h3>Zizu Hotspot</h3>
             <p>Jaringan Internet</p>
         </div>
     </div>
@@ -267,7 +295,7 @@
     <div class="sidebar-wa-box">
         <p>Butuh Bantuan Cepat?</p>
         <a href="https://wa.me/628989834130" target="_blank" class="sidebar-wa-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
             Hubungi Admin
         </a>
     </div>
@@ -292,16 +320,16 @@
     </ul>
 
     <div class="sidebar-footer">
-        &copy; 2026 Rislam Zizu Network
+        &copy; 2026 Rislam Febriansah Putra | Zizu Network
     </div>
 </div>
 
-<!-- POPUP LOADING MODERN -->
+<!-- POPUP LOADING -->
 <div class="loading-overlay" id="loadingModal">
     <div class="loading-card">
         <div class="spinner"></div>
         <h4>Memproses...</h4>
-        <p>Harap tunggu sebentar</p>
+        <p>Harap tunggu sebentar, sedang verifikasi data.</p>
     </div>
 </div>
 
@@ -310,9 +338,8 @@
     <!-- NAVBAR UTAMA -->
     <div class="navbar">
         <div class="navbar-left">
-            <!-- HAMBURGER MENU (KIRI) -->
             <button class="hamburger-btn" onclick="toggleSidebar()">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="3" y1="12" x2="21" y2="12"></line>
                     <line x1="3" y1="6" x2="21" y2="6"></line>
                     <line x1="3" y1="18" x2="21" y2="18"></line>
@@ -326,9 +353,7 @@
         </div>
 
         <div class="navbar-right">
-            <!-- DROPDOWN MENU KANAN ATAS -->
             <div class="dropdown">
-                <!-- Tombol Dropdown Kotak Rounded -->
                 <button class="dropdown-btn" onclick="toggleDropdown(event)">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -337,12 +362,10 @@
                     </svg>
                 </button>
 
-                <!-- Isi Dropdown Menu -->
                 <div class="dropdown-menu" id="dropdownMenu">
                     <a href="#" onclick="switchPage('paket'); closeDropdown(event)">Daftar Paket WiFi</a>
                     <a href="#" onclick="alert('Panduan:\n1. Beli Voucher\n2. Masukkan Kode\n3. Nikmati Aksesnya'); closeDropdown(event)">Panduan Penggunaan</a>
                     <a href="#" onclick="switchPage('status'); closeDropdown(event)">Cek Status Berlangganan</a>
-                    
                     <div class="admin-box">
                         <button class="admin-btn" onclick="alert('Membuka Halaman Login Admin Server...'); closeDropdown(event)">Masuk Portal Admin</button>
                     </div>
@@ -358,30 +381,31 @@
             <div class="slider-wrapper" id="sliderWrapper">
                 <div class="slide slide-1">
                     <div class="slide-text">
-                        <h2>Bisa Beli Voucher</h2>
-                        <h3>Online</h3>
-                        <p>Pakai E-Wallet - QRIS - Bank</p>
+                        <h2>Beli Voucher</h2>
+                        <h3>Lebih Cepat</h3>
+                        <p>Dukung E-Wallet & QRIS 24 Jam</p>
                     </div>
-                    <div class="slide-icon">🛒</div>
+                    <div class="slide-icon">⚡</div>
                 </div>
                 <div class="slide slide-2">
                     <div class="slide-text">
-                        <h2>Layanan Internet</h2>
+                        <h2>Akses Internet</h2>
                         <h3>Unlimited</h3>
-                        <p>Tanpa batas KUOTA</p>
+                        <p>Streaming Tanpa Khawatir Kuota</p>
                     </div>
                     <div class="slide-icon">🚀</div>
                 </div>
                 <div class="slide slide-3">
                     <div class="slide-text">
-                        <h2>Layanan Internet</h2>
-                        <h3>24 Jam</h3>
-                        <p>Nonstop Aktif Terus</p>
+                        <h2>Server Stabil</h2>
+                        <h3>Anti Lag</h3>
+                        <p>Ping kecil cocok untuk Gaming</p>
                     </div>
-                    <div class="slide-icon">⚡</div>
+                    <div class="slide-icon">🎮</div>
                 </div>
             </div>
         </div>
+        
         <div class="dots-container">
             <div class="dot active" onclick="goToSlide(0)"></div>
             <div class="dot" onclick="goToSlide(1)"></div>
@@ -391,39 +415,39 @@
         <div class="quick-grid">
             <div class="quick-item" onclick="switchPage('home')">
                 <div class="quick-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                 </div>
-                <div class="quick-label">Login Member</div>
+                <div class="quick-label">Member</div>
             </div>
             <div class="quick-item" onclick="switchPage('paket')">
                 <div class="quick-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                 </div>
-                <div class="quick-label">Order Voucher</div>
+                <div class="quick-label">Voucher</div>
             </div>
             <div class="quick-item" onclick="switchPage('status')">
                 <div class="quick-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                 </div>
                 <div class="quick-label">Status</div>
             </div>
         </div>
 
         <div class="login-card">
-            <h3>Silahkan Login</h3>
+            <h3>Autentikasi Jaringan</h3>
             <form onsubmit="prosesLogin(event)">
                 <div class="input-wrapper">
-                    <input type="text" id="vCode" placeholder="Masukkan Kode Voucher Disini" autocomplete="off" required>
+                    <input type="text" id="vCode" placeholder="Masukkan Kode Voucher" autocomplete="off" required>
                 </div>
-                <button type="submit" class="btn-submit">LOG IN</button>
+                <button type="submit" class="btn-submit">HUBUNGKAN SEKARANG</button>
             </form>
         </div>
     </div>
 
-    <!-- PAGE 2: PAKET (ORDER VOUCHER) -->
+    <!-- PAGE 2: PAKET -->
     <div id="page-paket" class="page">
         <div style="padding-top: 16px;"></div>
-        <div class="section-header">Pilihan Paket Hotspot</div>
+        <div class="section-header">Pilihan Paket Unggulan</div>
 
         <div class="pkg-card">
             <div class="pkg-top purple">
@@ -454,26 +478,29 @@
         </div>
     </div>
 
-    <!-- PAGE 3: CEK STATUS ORDER / VOUCHER -->
+    <!-- PAGE 3: STATUS -->
     <div id="page-status" class="page">
         <div class="status-box">
-            <h3>Cek Status Pembelian</h3>
-            <p>Masukkan Nomor Transaksi atau Kode Voucher untuk melacak status aktif paket Anda.</p>
+            <h3>Cek Status Berlangganan</h3>
+            <p>Masukkan Nomor Transaksi atau Kode Voucher untuk melacak durasi aktif paket internet Anda.</p>
             
             <form onsubmit="cekStatusOrder(event)">
                 <div class="input-wrapper">
                     <input type="text" id="statusInput" placeholder="Contoh: TRX-12345" required>
                 </div>
-                <button type="submit" class="btn-submit" style="background: #10b981; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);">
-                    CEK SEKARANG
+                <button type="submit" class="btn-submit" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);">
+                    PERIKSA DATA
                 </button>
             </form>
 
             <div class="result-card" id="statusResult">
-                <h4>✅ Transaksi Ditemukan</h4>
+                <h4>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    Transaksi Ditemukan
+                </h4>
                 <p><strong>Status:</strong> Aktif<br>
                    <strong>Paket:</strong> Daily Access 24 Jam<br>
-                   <strong>Masa Aktif Berakhir:</strong> Besok, 23:59 WIB</p>
+                   <strong>Berakhir Pada:</strong> Besok, 23:59 WIB</p>
             </div>
         </div>
     </div>
@@ -485,7 +512,7 @@
         </button>
 
         <div class="nav-center-btn" onclick="switchPage('status')">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
         </div>
 
         <button class="nav-btn" id="btn-nav-paket" onclick="switchPage('paket')">
@@ -496,7 +523,7 @@
 </div>
 
 <script>
-    // FUNGSI SIDEBAR TOGGLE (Garis Tiga Kiri)
+    // FUNGSI SIDEBAR
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
     
@@ -505,10 +532,9 @@
         overlay.classList.toggle('active');
     }
 
-    // FUNGSI DROPDOWN MENU (Kanan Atas)
+    // FUNGSI DROPDOWN
     function toggleDropdown(e) {
-        e.preventDefault();
-        e.stopPropagation(); // Mencegah klik menyebar agar tidak langsung tertutup
+        e.preventDefault(); e.stopPropagation();
         document.getElementById('dropdownMenu').classList.toggle('active');
     }
 
@@ -517,31 +543,25 @@
         document.getElementById('dropdownMenu').classList.remove('active');
     }
 
-    // Menutup dropdown saat area di luar dropdown diklik
     document.addEventListener('click', function(e) {
-        if (!e.target.closest('.dropdown')) {
-            closeDropdown();
-        }
+        if (!e.target.closest('.dropdown')) closeDropdown();
     });
 
-    // FUNGSI PINDAH HALAMAN (TAB)
+    // FUNGSI PINDAH HALAMAN
     function switchPage(pageId) {
         document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-
         document.getElementById('page-' + pageId).classList.add('active');
-
+        
         if(pageId === 'home') document.getElementById('btn-nav-home').classList.add('active');
         if(pageId === 'paket') document.getElementById('btn-nav-paket').classList.add('active');
 
-        // Reset pencarian status jika keluar
         document.getElementById('statusResult').style.display = 'none';
         document.getElementById('statusInput').value = '';
-
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // LOGIC CAROUSEL BANNERS
+    // CAROUSEL
     let currentSlide = 0;
     const totalSlides = 3;
     const sliderWrapper = document.getElementById('sliderWrapper');
@@ -555,43 +575,30 @@
     setInterval(() => {
         currentSlide = (currentSlide + 1) % totalSlides;
         goToSlide(currentSlide);
-    }, 4000);
+    }, 5000);
 
-    // AUTO FORMAT INPUT VOUCHER / KODE
-    document.getElementById('vCode').addEventListener('input', function() {
-        this.value = this.value.toUpperCase().replace(/\s+/g, '');
-    });
-    document.getElementById('statusInput').addEventListener('input', function() {
-        this.value = this.value.toUpperCase().replace(/\s+/g, '');
-    });
+    // FORMAT KODE
+    document.getElementById('vCode').addEventListener('input', function() { this.value = this.value.toUpperCase().replace(/\s+/g, ''); });
+    document.getElementById('statusInput').addEventListener('input', function() { this.value = this.value.toUpperCase().replace(/\s+/g, ''); });
 
-    // FUNGSI NOTIFIKASI LOADING
+    // FUNGSI LOADING
     function tunjukkanLoading(teks, delay, callback) {
         const modal = document.getElementById('loadingModal');
         modal.querySelector('h4').innerText = teks;
         modal.classList.add('active');
-
-        setTimeout(() => {
-            modal.classList.remove('active');
-            callback();
-        }, delay);
+        setTimeout(() => { modal.classList.remove('active'); callback(); }, delay);
     }
 
-    // PROSES TOMBOL LOGIN (Beranda)
+    // LOGIN & CEK STATUS
     function prosesLogin(e) {
         e.preventDefault();
         const voucher = document.getElementById('vCode').value;
-        tunjukkanLoading('Menghubungkan...', 2000, () => {
-            alert("Preview: Berhasil Login dengan kode " + voucher);
-        });
+        tunjukkanLoading('Autentikasi...', 2000, () => { alert("Berhasil Login dengan kode " + voucher); });
     }
 
-    // PROSES CEK STATUS
     function cekStatusOrder(e) {
         e.preventDefault();
-        tunjukkanLoading('Mencari Data...', 1500, () => {
-            document.getElementById('statusResult').style.display = 'block';
-        });
+        tunjukkanLoading('Sinkronisasi Data...', 1500, () => { document.getElementById('statusResult').style.display = 'block'; });
     }
 </script>
 
