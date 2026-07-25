@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotspot Login</title>
+    <style>
+        /* === VARIABEL & THEME === */
+        :root {
+            --primary: #0088ff;
+            --primary-glow: rgba(0, 136, 255, 0.4);
+            --accent: #00f2fe;
+            --success: #10b981;
+            --bg-dark: #0f172a;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(0, 242, 254, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(0, 136, 255, 0.2) 0px, transparent 50%);
+            background-attachment: fixed;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        /* === CONTAINER === */
+        .app-container {
+            width: 100%;
+            max-width: 440px;
+            background: #f8fafc;
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            padding-bottom: 90px;
+            overflow-x: hidden;
+        }
+
+        /* === SIDEBAR & OVERLAY (KIRI) === */
+        .sidebar-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+            z-index: 9998; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .sidebar-overlay.active { opacity: 1; pointer-events: all; }
+        
+        .sidebar {
+            position: fixed; top: 0; left: 0; width: 280px; height: 100%;
+            background: linear-gradient(180deg, #06b6d4 0%, #3b82f6 100%);
+            z-index: 9999; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 10px 0 30px rgba(0,0,0,0.2); display: flex; flex-direction: column;
+        }
+        .sidebar.active { transform: translateX(0); }
+        
+        .sidebar-header { padding: 30px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-header .logo-badge { width: 50px; height: 50px; font-size: 1.2rem; }
+        .sidebar-header-text h3 { color: white; font-size: 1.2rem; margin-bottom: 4px; }
+        .sidebar-header-text p { color: rgba(255,255,255,0.8); font-size: 0.85rem; font-weight: 500; }
+        
+        .sidebar-wa-box { background: rgba(255, 255, 255, 0.15); margin: 20px; padding: 16px; border-radius: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.2); }
+        .sidebar-wa-box p { color: white; font-size: 0.85rem; margin-bottom: 10px; font-weight: 600; }
+        .sidebar-wa-btn {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            background: #25D366; color: white; text-decoration: none; padding: 10px;
+            border-radius: 10px; font-weight: 800; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);
+        }
+
+        .sidebar-menu { list-style: none; padding: 10px 20px; flex: 1; }
+        .sidebar-menu li {
+            padding: 16px 12px; color: white; font-size: 1rem; font-weight: 600;
+            display: flex; align-items: center; gap: 12px; cursor: pointer;
+            border-radius: 12px; transition: background 0.2s; margin-bottom: 4px;
+        }
+        .sidebar-menu li:hover, .sidebar-menu li:active { background: rgba(255, 255, 255, 0.15); }
+        .sidebar-menu li svg { width: 20px; height: 20px; opacity: 0.9; }
+        .sidebar-footer { padding: 20px; text-align: center; color: rgba(255,255,255,0.6); font-size: 0.75rem; border-top: 1px solid rgba(255,255,255,0.1); }
+
+        /* === NAVBAR UTAMA === */
+        .navbar {
+            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px);
+            padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 50; border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .navbar-left { display: flex; align-items: center; gap: 14px; }
+        .hamburger-btn { background: none; border: none; color: var(--primary); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        
+        .logo { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 1.25rem; color: var(--text-main); letter-spacing: -0.5px; }
+        .logo-badge {
+            width: 36px; height: 36px; background: linear-gradient(135deg, #10b981, #059669);
+            color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .navbar-right { display: flex; align-items: center; gap: 10px; }
+
+        /* === DROPDOWN KANAN ATAS (BARU) === */
+        .dropdown { position: relative; }
+        
+        .dropdown-btn {
+            background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 10px;
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--text-main); transition: all 0.2s ease;
+        }
+        
+        .dropdown-btn:active { transform: scale(0.95); background: #e2e8f0; }
+        
+        .dropdown-menu {
+            position: absolute; top: 52px; right: 0; width: 230px; background: white;
+            border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+            display: flex; flex-direction: column; opacity: 0; pointer-events: none;
+            transform: translateY(-10px); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000; overflow: hidden; border: 1px solid #f1f5f9;
+        }
+        
+        .dropdown-menu.active { opacity: 1; pointer-events: all; transform: translateY(0); }
+        
+        .dropdown-menu a {
+            padding: 16px 20px; color: var(--text-main); text-decoration: none;
+            font-size: 0.95rem; font-weight: 600; border-bottom: 1px solid #f8fafc;
+            transition: background 0.2s; display: block;
+        }
+        
+        .dropdown-menu a:hover { background: #f8fafc; color: var(--primary); }
+        
+        .dropdown-menu .admin-box { padding: 16px; background: #fafafa; }
+        
+        .admin-btn {
+            width: 100%; padding: 14px; background: linear-gradient(135deg, #6366f1, #4f46e5); /* Warna gradasi ungu/biru */
+            color: white; border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 800;
+            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 6px 15px rgba(79, 70, 229, 0.3);
+        }
+        
+        .admin-btn:active { transform: scale(0.96); box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2); }
+
+        /* === HERO CAROUSEL / SLIDER === */
+        .slider-container { margin: 16px 16px 8px; position: relative; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 114, 255, 0.2); z-index: 10; }
+        .slider-wrapper { display: flex; transition: transform 0.4s ease-in-out; width: 100%; }
+        .slide { min-width: 100%; padding: 24px 20px; color: white; display: flex; align-items: center; justify-content: space-between; min-height: 120px; }
+        .slide.slide-1 { background: linear-gradient(135deg, #56ccf2 0%, #2f80ed 100%); }
+        .slide.slide-2 { background: linear-gradient(135deg, #4776e6 0%, #8e54e9 100%); }
+        .slide.slide-3 { background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%); }
+        .slide-text h2 { font-size: 1.15rem; font-weight: 800; line-height: 1.2; margin-bottom: 4px; }
+        .slide-text h3 { font-size: 1.5rem; font-weight: 900; margin-bottom: 6px; }
+        .slide-text p { font-size: 0.8rem; opacity: 0.9; }
+        .slide-icon { font-size: 3rem; opacity: 0.85; user-select: none; }
+        .dots-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 16px; }
+        .dot { width: 8px; height: 8px; background-color: #cbd5e1; border-radius: 50%; transition: all 0.3s ease; cursor: pointer; }
+        .dot.active { background-color: var(--primary); width: 20px; border-radius: 10px; }
+
+        /* === QUICK MENUS === */
+        .quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 0 16px 24px; position: relative; z-index: 20; }
+        .quick-item {
+            background: white; padding: 16px 10px; border-radius: 16px; text-align: center;
+            cursor: pointer; border: 1px solid #f1f5f9; transition: all 0.2s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+        .quick-item:active { transform: scale(0.95); }
+        .quick-icon {
+            width: 44px; height: 44px; margin: 0 auto 8px; border-radius: 12px;
+            background: #0088ff; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+        }
+        .quick-label { font-size: 0.75rem; font-weight: 700; color: var(--primary); }
+
+        /* === LOGIN CARD === */
+        .login-card {
+            margin: 0 16px 20px; background: white; border-radius: 20px; padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; position: relative; z-index: 20;
+        }
+        .login-card h3 { font-size: 1.1rem; color: var(--text-main); margin-bottom: 18px; text-align: center; }
+        .input-wrapper { position: relative; margin-bottom: 16px; }
+        .input-wrapper input {
+            width: 100%; padding: 16px; border: 2px solid #e2e8f0; border-radius: 14px; font-size: 0.95rem;
+            font-weight: 600; text-align: center; outline: none; transition: all 0.3s ease; background: #f8fafc; color: var(--text-main);
+        }
+        .input-wrapper input::placeholder { color: #94a3b8; font-weight: 500; text-transform: none; }
+        .input-wrapper input:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 4px var(--primary-glow); }
+        .btn-submit {
+            width: 100%; padding: 16px; background: #00aeff; color: white; border: none;
+            border-radius: 14px; font-size: 1rem; font-weight: 800; cursor: pointer;
+            box-shadow: 0 8px 20px rgba(0, 174, 255, 0.3); transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .btn-submit:active { transform: scale(0.98); }
+
+        /* === MODERN LOADING OVERLAY === */
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); z-index: 99999;
+            display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .loading-overlay.active { opacity: 1; pointer-events: all; }
+        .loading-card { background: white; padding: 30px; border-radius: 20px; text-align: center; width: 80%; max-width: 300px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); transform: translateY(20px); transition: transform 0.3s ease; }
+        .loading-overlay.active .loading-card { transform: translateY(0); }
+        .spinner { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading-card h4 { font-size: 1.1rem; color: var(--text-main); margin-bottom: 6px; }
+        .loading-card p { font-size: 0.85rem; color: var(--text-sub); }
+
+        /* === PACKAGE CARDS === */
+        .section-header { padding: 0 20px; margin-bottom: 12px; font-size: 0.8rem; font-weight: 800; color: var(--text-sub); letter-spacing: 0.5px; text-transform: uppercase; }
+        .pkg-card { margin: 0 16px 14px; background: white; border-radius: 18px; overflow: hidden; border: 1px solid #f1f5f9; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
+        .pkg-top { padding: 16px 20px; color: white; display: flex; justify-content: space-between; align-items: center; }
+        .pkg-top.purple { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+        .pkg-top.blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .pkg-title { font-size: 1.1rem; font-weight: 800; }
+        .pkg-sub { font-size: 0.75rem; opacity: 0.8; }
+        .pkg-badge { background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(4px); padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; }
+        .pkg-bottom { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .pkg-price { font-size: 1.3rem; font-weight: 800; color: var(--text-main); }
+        .pkg-price span { font-size: 0.75rem; color: var(--text-sub); font-weight: 500; }
+        .btn-buy-pkg { padding: 10px 20px; border-radius: 10px; color: white; text-decoration: none; font-weight: 800; font-size: 0.85rem; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .btn-buy-pkg.purple { background: #8b5cf6; }
+        .btn-buy-pkg.blue { background: #3b82f6; }
+
+        /* === STATUS & FORM UI === */
+        .status-box { background: white; margin: 20px 16px; padding: 30px 24px; border-radius: 20px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; }
+        .status-box h3 { color: var(--text-main); margin-bottom: 10px; font-size: 1.2rem; }
+        .status-box p { color: var(--text-sub); font-size: 0.85rem; margin-bottom: 24px; line-height: 1.5; }
+        .result-card { display: none; margin-top: 20px; padding: 16px; border-radius: 14px; text-align: left; background: #f0fdf4; border: 1px solid #bbf7d0; animation: slideUp 0.3s ease; }
+        .result-card h4 { color: #166534; font-size: 0.9rem; margin-bottom: 8px; }
+        .result-card p { color: #15803d; font-size: 0.8rem; margin: 0; line-height: 1.4; }
+
+        /* === BOTTOM NAV === */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%;
+            max-width: 440px; height: 70px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px);
+            display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #e2e8f0; z-index: 40;
+        }
+        .nav-btn { display: flex; align-items: center; justify-content: center; color: #94a3b8; cursor: pointer; border: none; background: none; width: 60px; height: 100%; }
+        .nav-btn.active { color: #00aeff; }
+        .nav-btn svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .nav-center-btn {
+            width: 56px; height: 56px; background: linear-gradient(135deg, #00c6ff, #0072ff); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 8px 20px rgba(0, 114, 255, 0.4);
+            transform: translateY(-16px); cursor: pointer; border: 4px solid white;
+        }
+
+        /* TAB PAGES */
+        .page { display: none; }
+        .page.active { display: block; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<!-- SIDEBAR OVERLAY & MENU (KIRI) -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="logo-badge">&gt;_</div>
+        <div class="sidebar-header-text">
+            <h3>Zizu Hotspot</h3>
+            <p>Jaringan Internet</p>
+        </div>
+    </div>
+    
+    <div class="sidebar-wa-box">
+        <p>Butuh Bantuan Cepat?</p>
+        <a href="https://wa.me/628989834130" target="_blank" class="sidebar-wa-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+            Hubungi Admin
+        </a>
+    </div>
+
+    <ul class="sidebar-menu">
+        <li onclick="switchPage('home'); toggleSidebar()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            Beranda
+        </li>
+        <li onclick="switchPage('paket'); toggleSidebar()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+            Daftar Paket Hotspot
+        </li>
+        <li onclick="switchPage('status'); toggleSidebar()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            Cek Status Order
+        </li>
+        <li onclick="alert('Cara Penggunaan:\n1. Beli Voucher di admin\n2. Masukkan kode di Beranda\n3. Nikmati Internet!'); toggleSidebar()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            Cara Penggunaan
+        </li>
+    </ul>
+
+    <div class="sidebar-footer">
+        &copy; 2026 Zizu Network
+    </div>
+</div>
+
+<!-- POPUP LOADING MODERN -->
+<div class="loading-overlay" id="loadingModal">
+    <div class="loading-card">
+        <div class="spinner"></div>
+        <h4>Memproses...</h4>
+        <p>Harap tunggu sebentar</p>
+    </div>
+</div>
+
+<div class="app-container">
+
+    <!-- NAVBAR UTAMA -->
+    <div class="navbar">
+        <div class="navbar-left">
+            <!-- HAMBURGER MENU (KIRI) -->
+            <button class="hamburger-btn" onclick="toggleSidebar()">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            
+            <div class="logo">
+                <div class="logo-badge">&gt;_</div>
+                <span>Hotspotku</span>
+            </div>
+        </div>
+
+        <div class="navbar-right">
+            <!-- DROPDOWN MENU KANAN ATAS -->
+            <div class="dropdown">
+                <!-- Tombol Dropdown Kotak Rounded -->
+                <button class="dropdown-btn" onclick="toggleDropdown(event)">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+
+                <!-- Isi Dropdown Menu -->
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <a href="#" onclick="switchPage('paket'); closeDropdown(event)">Daftar Paket WiFi</a>
+                    <a href="#" onclick="alert('Panduan:\n1. Beli Voucher\n2. Masukkan Kode\n3. Nikmati Aksesnya'); closeDropdown(event)">Panduan Penggunaan</a>
+                    <a href="#" onclick="switchPage('status'); closeDropdown(event)">Cek Status Berlangganan</a>
+                    
+                    <div class="admin-box">
+                        <button class="admin-btn" onclick="alert('Membuka Halaman Login Admin Server...'); closeDropdown(event)">Masuk Portal Admin</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 1: HOME -->
+    <div id="page-home" class="page active">
+        
+        <div class="slider-container">
+            <div class="slider-wrapper" id="sliderWrapper">
+                <div class="slide slide-1">
+                    <div class="slide-text">
+                        <h2>Bisa Beli Voucher</h2>
+                        <h3>Online</h3>
+                        <p>Pakai E-Wallet - QRIS - Bank</p>
+                    </div>
+                    <div class="slide-icon">🛒</div>
+                </div>
+                <div class="slide slide-2">
+                    <div class="slide-text">
+                        <h2>Layanan Internet</h2>
+                        <h3>Unlimited</h3>
+                        <p>Tanpa batas KUOTA</p>
+                    </div>
+                    <div class="slide-icon">🚀</div>
+                </div>
+                <div class="slide slide-3">
+                    <div class="slide-text">
+                        <h2>Layanan Internet</h2>
+                        <h3>24 Jam</h3>
+                        <p>Nonstop Aktif Terus</p>
+                    </div>
+                    <div class="slide-icon">⚡</div>
+                </div>
+            </div>
+        </div>
+        <div class="dots-container">
+            <div class="dot active" onclick="goToSlide(0)"></div>
+            <div class="dot" onclick="goToSlide(1)"></div>
+            <div class="dot" onclick="goToSlide(2)"></div>
+        </div>
+
+        <div class="quick-grid">
+            <div class="quick-item" onclick="switchPage('home')">
+                <div class="quick-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </div>
+                <div class="quick-label">Login Member</div>
+            </div>
+            <div class="quick-item" onclick="switchPage('paket')">
+                <div class="quick-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                </div>
+                <div class="quick-label">Order Voucher</div>
+            </div>
+            <div class="quick-item" onclick="switchPage('status')">
+                <div class="quick-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                </div>
+                <div class="quick-label">Status</div>
+            </div>
+        </div>
+
+        <div class="login-card">
+            <h3>Silahkan Login</h3>
+            <form onsubmit="prosesLogin(event)">
+                <div class="input-wrapper">
+                    <input type="text" id="vCode" placeholder="Masukkan Kode Voucher Disini" autocomplete="off" required>
+                </div>
+                <button type="submit" class="btn-submit">LOG IN</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- PAGE 2: PAKET (ORDER VOUCHER) -->
+    <div id="page-paket" class="page">
+        <div style="padding-top: 16px;"></div>
+        <div class="section-header">Pilihan Paket Hotspot</div>
+
+        <div class="pkg-card">
+            <div class="pkg-top purple">
+                <div>
+                    <div class="pkg-title">Flash Trial</div>
+                    <div class="pkg-sub">Speed up to 10 Mbps</div>
+                </div>
+                <div class="pkg-badge">1 Jam</div>
+            </div>
+            <div class="pkg-bottom">
+                <div class="pkg-price">Rp 2.000 <span>/ voucher</span></div>
+                <a href="https://wa.me/628989834130?text=Order%20Paket%20Flash%20Trial" class="btn-buy-pkg purple">Beli</a>
+            </div>
+        </div>
+
+        <div class="pkg-card">
+            <div class="pkg-top blue">
+                <div>
+                    <div class="pkg-title">Daily Access</div>
+                    <div class="pkg-sub">Unlimited Tanpa Kuota</div>
+                </div>
+                <div class="pkg-badge">24 Jam 🔥</div>
+            </div>
+            <div class="pkg-bottom">
+                <div class="pkg-price">Rp 5.000 <span>/ voucher</span></div>
+                <a href="https://wa.me/628989834130?text=Order%20Paket%20Daily%20Access" class="btn-buy-pkg blue">Beli</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 3: CEK STATUS ORDER / VOUCHER -->
+    <div id="page-status" class="page">
+        <div class="status-box">
+            <h3>Cek Status Pembelian</h3>
+            <p>Masukkan Nomor Transaksi atau Kode Voucher untuk melacak status aktif paket Anda.</p>
+            
+            <form onsubmit="cekStatusOrder(event)">
+                <div class="input-wrapper">
+                    <input type="text" id="statusInput" placeholder="Contoh: TRX-12345" required>
+                </div>
+                <button type="submit" class="btn-submit" style="background: #10b981; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);">
+                    CEK SEKARANG
+                </button>
+            </form>
+
+            <div class="result-card" id="statusResult">
+                <h4>✅ Transaksi Ditemukan</h4>
+                <p><strong>Status:</strong> Aktif<br>
+                   <strong>Paket:</strong> Daily Access 24 Jam<br>
+                   <strong>Masa Aktif Berakhir:</strong> Besok, 23:59 WIB</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM NAVIGATION -->
+    <div class="bottom-nav">
+        <button class="nav-btn active" id="btn-nav-home" onclick="switchPage('home')">
+            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        </button>
+
+        <div class="nav-center-btn" onclick="switchPage('status')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        </div>
+
+        <button class="nav-btn" id="btn-nav-paket" onclick="switchPage('paket')">
+            <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+        </button>
+    </div>
+
+</div>
+
+<script>
+    // FUNGSI SIDEBAR TOGGLE (Garis Tiga Kiri)
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    function toggleSidebar() {
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+
+    // FUNGSI DROPDOWN MENU (Kanan Atas)
+    function toggleDropdown(e) {
+        e.preventDefault();
+        e.stopPropagation(); // Mencegah klik menyebar agar tidak langsung tertutup
+        document.getElementById('dropdownMenu').classList.toggle('active');
+    }
+
+    function closeDropdown(e) {
+        if(e) e.preventDefault();
+        document.getElementById('dropdownMenu').classList.remove('active');
+    }
+
+    // Menutup dropdown saat area di luar dropdown diklik
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown')) {
+            closeDropdown();
+        }
+    });
+
+    // FUNGSI PINDAH HALAMAN (TAB)
+    function switchPage(pageId) {
+        document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('page-' + pageId).classList.add('active');
+
+        if(pageId === 'home') document.getElementById('btn-nav-home').classList.add('active');
+        if(pageId === 'paket') document.getElementById('btn-nav-paket').classList.add('active');
+
+        // Reset pencarian status jika keluar
+        document.getElementById('statusResult').style.display = 'none';
+        document.getElementById('statusInput').value = '';
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // LOGIC CAROUSEL BANNERS
+    let currentSlide = 0;
+    const totalSlides = 3;
+    const sliderWrapper = document.getElementById('sliderWrapper');
+    const dots = document.querySelectorAll('.dot');
+
+    function goToSlide(index) {
+        currentSlide = index;
+        sliderWrapper.style.transform = `translateX(-${currentSlide * 100}%)`;
+        dots.forEach((dot, i) => dot.classList.toggle('active', i === currentSlide));
+    }
+    setInterval(() => {
+        currentSlide = (currentSlide + 1) % totalSlides;
+        goToSlide(currentSlide);
+    }, 4000);
+
+    // AUTO FORMAT INPUT VOUCHER / KODE
+    document.getElementById('vCode').addEventListener('input', function() {
+        this.value = this.value.toUpperCase().replace(/\s+/g, '');
+    });
+    document.getElementById('statusInput').addEventListener('input', function() {
+        this.value = this.value.toUpperCase().replace(/\s+/g, '');
+    });
+
+    // FUNGSI NOTIFIKASI LOADING
+    function tunjukkanLoading(teks, delay, callback) {
+        const modal = document.getElementById('loadingModal');
+        modal.querySelector('h4').innerText = teks;
+        modal.classList.add('active');
+
+        setTimeout(() => {
+            modal.classList.remove('active');
+            callback();
+        }, delay);
+    }
+
+    // PROSES TOMBOL LOGIN (Beranda)
+    function prosesLogin(e) {
+        e.preventDefault();
+        const voucher = document.getElementById('vCode').value;
+        tunjukkanLoading('Menghubungkan...', 2000, () => {
+            alert("Preview: Berhasil Login dengan kode " + voucher);
+        });
+    }
+
+    // PROSES CEK STATUS
+    function cekStatusOrder(e) {
+        e.preventDefault();
+        tunjukkanLoading('Mencari Data...', 1500, () => {
+            document.getElementById('statusResult').style.display = 'block';
+        });
+    }
+</script>
+
+</body>
+</html>
