@@ -1,6 +1,3 @@
-Fixed by ridhoae303  
-https:/github.com/ridhoae303
-
 # Zizu MikroTik Hotspot Portal
 
 A cleaned-up MikroTik hotspot login portal that actually behaves like a proper Wi-Fi captive portal instead of a stretched-out frontend demo.
