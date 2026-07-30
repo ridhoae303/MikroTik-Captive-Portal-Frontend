@@ -1,51 +1,105 @@
-# 🚀 Modern Mikrotik Hotspot Login Template
+Fixed by ridhoae303  
+https:/github.com/ridhoae303
 
-[![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)]()
-[![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)]()
-[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)]()
+# Zizu MikroTik Hotspot Login - Fixed Build
 
-Template halaman login Hotspot Mikrotik modern dengan desain **Premium Glassmorphism**. Dibuat khusus untuk memberikan pengalaman login WiFi yang elegan, responsif, dan mirip dengan aplikasi *mobile* native. Sangat cocok untuk usaha RT/RW Net, Warkop, Cafe, maupun jaringan sekolah/kampus.
+Versi ini merapikan template asli agar lebih cocok dipakai sebagai halaman login Wi-Fi/Hotspot MikroTik, bukan sekadar demo front-end.
 
-## ✨ Fitur Unggulan
+## Yang diperbaiki
 
-*   **🎨 Premium Glassmorphism UI:** Desain tembus pandang (efek kaca buram) bergaya modern.
-*   **📱 Mobile-First Design:** Tampilan sangat dioptimalkan untuk pengguna *smartphone*.
-*   **🍔 Interactive Navigation:** Dilengkapi dengan *Sidebar Drawer* (kiri) dan *Dropdown Menu* (kanan atas) untuk navigasi yang bersih.
-*   **🖼️ Hero Carousel:** Banner slider otomatis untuk mempromosikan paket/voucher.
-*   **⚡ Ringan & Cepat:** Murni menggunakan HTML5, CSS3, dan Vanilla JavaScript (Tanpa Framework). Sangat ringan dan tidak membebani *storage* RouterOS Mikrotik.
-*   **🔍 Status Checker:** Tersedia UI khusus untuk simulasi form pelanggan mengecek masa aktif vouchernya.
+- Layout default dibuat ringkas dan responsif. Pada tablet/desktop, navigasi berubah menjadi sidebar vertikal permanen; pada ponsel tetap menjadi drawer hamburger.
+- Navbar kanan/kiri dan bottom navigation yang redundan sudah digabung menjadi satu sistem navigasi.
+- Slider sekarang mendukung swipe/drag, tombol sebelumnya/berikutnya, dot navigation, keyboard, dan autoplay yang berhenti saat tab tidak aktif.
+- Efek blur, animasi, font eksternal, dan transition berlebihan dikurangi agar halaman lebih ringan di perangkat murah dan captive portal WebView. Gambar QR juga dioptimalkan ke WebP lossless.
+- Semua `alert()` bawaan browser diganti dengan dialog dan halaman UI internal.
+- Form login memakai variabel MikroTik asli dan mendukung voucher username=password, termasuk HTTP CHAP melalui MD5 lokal.
+- Pengecekan status tidak lagi memberikan hasil palsu. Front-end melakukan request ke server dan hanya menampilkan data saat server memberikan respons valid.
+- Halaman Panduan, Syarat Layanan, Bantuan, serta dialog pembayaran QRIS sudah dilengkapi.
+- Penanganan input, timeout server, respons non-JSON, navigasi, fokus keyboard, reduced motion, dan error MikroTik ikut dirapikan.
+- Ikon promo dan simbol hak cipta sekarang encoding-safe: source halaman utama hanya memakai ASCII, HTML entities, CSS escapes, dan inline SVG agar tidak berubah menjadi mojibake di captive portal.
 
-## 🌐 Live Preview
+## Struktur penting
 
-Kamu bisa melihat demo langsung dari template ini melalui link berikut:
-👉 **[Live Demo Hotspot Login](https://hotspot-login-indihome.vercel.app/)**
+```text
+index.html
+assets/css/app.css
+assets/js/config.js
+assets/js/md5.js
+assets/js/app.js
+api/subscription/status.js
+vercel.json
+```
 
-## 🛠️ Cara Penggunaan (Instal ke Mikrotik via Aplikasi WinBox)
+## Pasang ke MikroTik
 
-Karena file utama di repositori ini bernama `index.html` (agar bisa di-preview online via Vercel atau Website pribadi dengan Hosting serta Domain pribadi), kamu harus mengubah nama file index.html ini menjadi `login.html` saat akan dimasukkan ke MikroTik. Saat ini template ini berada dalam versi **Front-End Preview** untuk kebutuhan penyesuaian UI/UX. Untuk menggunakannya langsung di RouterOS Mikrotik:
+1. Gunakan file `login.html` yang sudah disertakan. `index.html` tetap tersedia untuk preview/hosting.
+2. Upload `login.html` dan seluruh folder `assets` ke direktori Hotspot MikroTik.
+3. Pastikan metode login Hotspot mengizinkan `http-chap` atau `http-pap` sesuai profil router.
+4. Tambahkan domain API status ke **IP > Hotspot > Walled Garden** apabila status diperiksa sebelum pengguna berhasil login.
 
-**Langkah-langkah pemasangan:**
-1. Download repositori ini dengan klik tombol hijau **Code** -> **Download ZIP**, lalu ekstrak file ZIP tersebut di laptop kamu.
-2. Ubah nama file `index.html` menjadi `login.html`.
-3. Buka aplikasi **Winbox** dan login ke router MikroTik kamu.
-4. Pada menu sebelah kiri, klik menu **Files**.
-5. Cari folder direktori hotspot aktif kamu (biasanya bernama `hotspot` atau `flash/hotspot`). 
-   *(Tips: Kamu bisa memastikannya lewat menu IP > Hotspot > Server Profiles > lihat kolom "HTML Directory").*
-6. **Drag and drop** (seret dan lepas) file `login.html` beserta folder `assets` dari laptop kamu ke dalam folder `hotspot` di jendela *Files* Winbox. Timpa (*replace*) file bawaan yang sudah ada.
-7. Selesai! Silakan hubungkan perangkat ke jaringan WiFi hotspot kamu untuk melihat tampilan barunya.
+Form login sudah berisi variabel berikut:
 
-> **⚠️ Catatan Penting untuk Fungsionalitas Login:**
-> File di repositori ini merupakan desain **Front-End Preview**. Agar form login bisa benar-benar mengautentikasi *user* di MikroTik, buka file `login.html` dengan *text editor* (seperti VS Code atau Notepad), lalu pastikan tag `<form>` dan `<input>` disesuaikan dengan variabel bawaan MikroTik.
-> 
-> Ubah tag form dari:
-> `<form onsubmit="prosesLogin(event)">`
-> Menjadi:
-> `<form name="login" action="$(link-login-only)" method="post">`
-> `<input type="hidden" name="dst" value="$(link-orig)" />`
-> `<input type="hidden" name="popup" value="true" />`
+```html
+<form action="$(link-login-only)" method="post">
+<input name="dst" value="$(link-orig)">
+<input name="popup" value="true">
+```
 
-## 👨‍💻 Author
+Pada mode preview biasa, tombol login akan menampilkan dialog bahwa file harus dipasang pada MikroTik. Tidak ada pesan sukses palsu.
 
-Dibuat dan dikembangkan oleh **Rislam Febriansah Putra**.
+## Hubungkan pengecekan status ke server nyata
 
-*Open-source* dan bebas digunakan serta dimodifikasi untuk komunitas jaringan. Jika template ini membantu *project* jaringan kamu, jangan lupa klik tombol ⭐ **Star** di pojok kanan atas repository ini!
+Front-end membaca endpoint dari `assets/js/config.js`:
+
+```js
+statusApiUrl: "/api/subscription/status"
+```
+
+Project menyertakan fungsi Vercel di `api/subscription/status.js`. Atur Environment Variables berikut di Vercel:
+
+- `SUBSCRIPTION_API_URL` - URL server/database kamu yang benar-benar memeriksa transaksi atau voucher.
+- `SUBSCRIPTION_API_METHOD` - `POST` (default) atau `GET`.
+- `SUBSCRIPTION_QUERY_PARAM` - nama field query yang diminta server, default `query`.
+- `SUBSCRIPTION_API_TOKEN` - opsional; dikirim sebagai Bearer token dari sisi server, tidak bocor ke browser.
+- `SUBSCRIPTION_API_TIMEOUT_MS` - opsional, default 7000 ms.
+
+Contoh respons sukses upstream:
+
+```json
+{
+  "success": true,
+  "found": true,
+  "message": "Langganan aktif",
+  "data": {
+    "status": "Aktif",
+    "paket": "Daily Access",
+    "berakhirPada": "2026-08-01T23:59:00+07:00"
+  }
+}
+```
+
+Respons gagal, timeout, endpoint belum dikonfigurasi, data tidak ditemukan, atau respons bukan JSON akan menghasilkan pesan:
+
+```text
+Gagal memeriksa ke sisi server.
+```
+
+Jika halaman dijalankan langsung dari MikroTik tanpa Vercel, ubah `statusApiUrl` menjadi URL HTTPS API eksternal kamu. Server tersebut wajib mengizinkan CORS untuk domain/origin portal dan harus dimasukkan ke Walled Garden.
+
+## Konfigurasi lain
+
+Edit `assets/js/config.js` untuk mengatur nomor WhatsApp, URL portal admin, timeout, dan endpoint status.
+
+```js
+window.HOTSPOT_CONFIG = Object.freeze({
+    statusApiUrl: "/api/subscription/status",
+    statusTimeoutMs: 8000,
+    adminUrl: "https://admin.example.com",
+    whatsappNumber: "628989834130"
+});
+```
+
+## Kredit
+
+Original design: Rislam Febriansah Putra  
+Fixed build: ridhoae303
