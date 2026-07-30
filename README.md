@@ -1,6 +1,3 @@
-Fixed by ridhoae303  
-https:/github.com/ridhoae303
-
 # Zizu MikroTik Hotspot Login - Fixed Build
 
 Versi ini merapikan template asli agar lebih cocok dipakai sebagai halaman login Wi-Fi/Hotspot MikroTik, bukan sekadar demo front-end.
