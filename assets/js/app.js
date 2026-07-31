@@ -43,11 +43,18 @@ https:/github.com/ridhoae303
 
     const state = {
         page: "home",
+        pageTransitioning: false,
+        pendingPage: "",
         slide: 0,
-        slideCount: 3,
+        slideCount: 0,
+        trackIndex: 1,
         carouselTimer: 0,
+        carouselBusy: false,
+        queuedCarouselStep: 0,
         dragStartX: 0,
+        dragStartTime: 0,
         dragOffsetX: 0,
+        dragMoved: false,
         dragging: false,
         toastTimer: 0
     };
@@ -75,16 +82,31 @@ https:/github.com/ridhoae303
         document.body.style.overflow = "";
     }
 
-    function switchPage(pageName) {
-        const nextPage = document.getElementById(`page-${pageName}`);
-        if (!nextPage) return;
+    function waitForAnimation(element, timeoutMs) {
+        return new Promise((resolve) => {
+            let settled = false;
+            const finish = () => {
+                if (settled) return;
+                settled = true;
+                element.removeEventListener("animationend", finish);
+                resolve();
+            };
 
-        document.querySelectorAll(".page").forEach((page) => {
-            const active = page === nextPage;
-            page.hidden = !active;
-            page.classList.toggle("is-active", active);
+            element.addEventListener("animationend", finish, { once: true });
+            window.setTimeout(finish, timeoutMs);
         });
+    }
 
+    function scrollPageToTop() {
+        // Desktop scroll lives inside main; mobile scroll lives on the document.
+        if (wideNavQuery.matches) {
+            ui.mainContent.scrollTo({ top: 0, behavior: "auto" });
+        } else {
+            window.scrollTo({ top: 0, behavior: "auto" });
+        }
+    }
+
+    function syncPageNavigation(pageName) {
         document.querySelectorAll("[data-page]").forEach((link) => {
             const active = link.dataset.page === pageName;
             link.classList.toggle("is-active", active);
@@ -92,17 +114,60 @@ https:/github.com/ridhoae303
                 active ? link.setAttribute("aria-current", "page") : link.removeAttribute("aria-current");
             }
         });
+    }
+
+    async function runPageTransition(pageName) {
+        const nextPage = document.getElementById(`page-${pageName}`);
+        const currentPage = document.querySelector(".page.is-active");
+        if (!nextPage || currentPage === nextPage) return;
+
+        state.pageTransitioning = true;
+        syncPageNavigation(pageName);
+        closeNav();
+
+        if (currentPage && !reducedMotionQuery.matches) {
+            currentPage.classList.remove("is-entering");
+            currentPage.classList.add("is-leaving");
+            await waitForAnimation(currentPage, 220);
+        }
+
+        if (currentPage) {
+            currentPage.hidden = true;
+            currentPage.classList.remove("is-active", "is-leaving", "is-entering");
+        }
+
+        nextPage.hidden = false;
+        nextPage.classList.add("is-active");
+        scrollPageToTop();
+
+        if (!reducedMotionQuery.matches) {
+            // Restarting the class makes the animation reliable even after rapid page changes.
+            nextPage.classList.remove("is-entering");
+            void nextPage.offsetWidth;
+            nextPage.classList.add("is-entering");
+            await waitForAnimation(nextPage, 320);
+            nextPage.classList.remove("is-entering");
+        }
 
         state.page = pageName;
         document.title = `${nextPage.dataset.title || "Hotspot"} | Zizu Hotspot`;
-        closeNav();
+        state.pageTransitioning = false;
 
-        // Desktop scroll lives inside main; mobile scroll lives on the document.
-        if (wideNavQuery.matches) {
-            ui.mainContent.scrollTo({ top: 0, behavior: reducedMotionQuery.matches ? "auto" : "smooth" });
-        } else {
-            window.scrollTo({ top: 0, behavior: reducedMotionQuery.matches ? "auto" : "smooth" });
+        if (state.pendingPage) {
+            const pendingPage = state.pendingPage;
+            state.pendingPage = "";
+            if (pendingPage !== state.page) switchPage(pendingPage);
         }
+    }
+
+    function switchPage(pageName) {
+        if (!document.getElementById(`page-${pageName}`)) return;
+        if (state.pageTransitioning) {
+            state.pendingPage = pageName;
+            return;
+        }
+
+        runPageTransition(pageName);
     }
 
     function showDialog(title, message) {
@@ -309,24 +374,84 @@ https:/github.com/ridhoae303
         }
     }
 
-    function showSlide(index, userInitiated = false) {
-        state.slide = (index + state.slideCount) % state.slideCount;
-        const offset = state.slide * -100;
-        ui.carouselTrack.style.transform = `translate3d(${offset}%, 0, 0)`;
-
+    function updateCarouselDots() {
         ui.carouselDots.forEach((dot, dotIndex) => {
             const active = dotIndex === state.slide;
             dot.classList.toggle("is-active", active);
             active ? dot.setAttribute("aria-current", "true") : dot.removeAttribute("aria-current");
         });
+    }
+
+    function setCarouselPosition(trackIndex, animate = true, dragPercent = 0) {
+        state.trackIndex = trackIndex;
+        ui.carouselTrack.classList.toggle("is-jumping", !animate);
+        ui.carouselTrack.style.transform = `translate3d(${(-trackIndex * 100) + dragPercent}%, 0, 0)`;
+
+        if (!animate) {
+            // Force the no-animation jump to land before transitions are switched back on.
+            void ui.carouselTrack.offsetWidth;
+            window.requestAnimationFrame(() => ui.carouselTrack.classList.remove("is-jumping"));
+        }
+    }
+
+    function normalizeCarouselAfterLoop() {
+        if (state.trackIndex === 0) {
+            setCarouselPosition(state.slideCount, false);
+        } else if (state.trackIndex === state.slideCount + 1) {
+            setCarouselPosition(1, false);
+        }
+    }
+
+    function finishCarouselMove(event) {
+        if (event && event.target !== ui.carouselTrack) return;
+        normalizeCarouselAfterLoop();
+        state.carouselBusy = false;
+
+        if (state.queuedCarouselStep) {
+            const queuedStep = state.queuedCarouselStep;
+            state.queuedCarouselStep = 0;
+            window.requestAnimationFrame(() => moveCarousel(queuedStep));
+        }
+    }
+
+    function moveCarousel(step, userInitiated = false) {
+        if (!state.slideCount || !step) return;
+        const direction = step > 0 ? 1 : -1;
 
         if (userInitiated) restartCarousel();
+        if (state.carouselBusy) {
+            state.queuedCarouselStep = direction;
+            return;
+        }
+
+        state.carouselBusy = true;
+        state.slide = (state.slide + direction + state.slideCount) % state.slideCount;
+        updateCarouselDots();
+        setCarouselPosition(state.trackIndex + direction, true);
+    }
+
+    function showSlide(index, userInitiated = false) {
+        if (!state.slideCount) return;
+        const target = (index + state.slideCount) % state.slideCount;
+        if (target === state.slide) {
+            setCarouselPosition(state.trackIndex, true);
+            if (userInitiated) restartCarousel();
+            return;
+        }
+
+        let distance = target - state.slide;
+        if (Math.abs(distance) > state.slideCount / 2) {
+            distance += distance > 0 ? -state.slideCount : state.slideCount;
+        }
+
+        moveCarousel(distance > 0 ? 1 : -1, userInitiated);
     }
 
     function startCarousel() {
-        if (reducedMotionQuery.matches || document.hidden) return;
+        const carouselHasFocus = ui.carousel.contains(document.activeElement);
+        if (reducedMotionQuery.matches || document.hidden || ui.carousel.matches(":hover") || carouselHasFocus) return;
         window.clearInterval(state.carouselTimer);
-        state.carouselTimer = window.setInterval(() => showSlide(state.slide + 1), 5500);
+        state.carouselTimer = window.setInterval(() => moveCarousel(1), 5500);
     }
 
     function stopCarousel() {
@@ -340,9 +465,14 @@ https:/github.com/ridhoae303
     }
 
     function beginDrag(event) {
+        if (event.target.closest("button, a, input, select, textarea, label")) return;
         if (event.pointerType === "mouse" && event.button !== 0) return;
+        if (state.carouselBusy) return;
+
         state.dragging = true;
+        state.dragMoved = false;
         state.dragStartX = event.clientX;
+        state.dragStartTime = performance.now();
         state.dragOffsetX = 0;
         ui.carousel.classList.add("is-dragging");
         ui.carousel.setPointerCapture?.(event.pointerId);
@@ -352,10 +482,11 @@ https:/github.com/ridhoae303
     function moveDrag(event) {
         if (!state.dragging) return;
         state.dragOffsetX = event.clientX - state.dragStartX;
+        if (Math.abs(state.dragOffsetX) > 4) state.dragMoved = true;
+
         const width = ui.carousel.clientWidth || 1;
-        const base = state.slide * -100;
         const dragPercent = (state.dragOffsetX / width) * 100;
-        ui.carouselTrack.style.transform = `translate3d(${base + dragPercent}%, 0, 0)`;
+        setCarouselPosition(state.trackIndex, false, dragPercent);
     }
 
     function endDrag(event) {
@@ -364,11 +495,45 @@ https:/github.com/ridhoae303
         ui.carousel.classList.remove("is-dragging");
         ui.carousel.releasePointerCapture?.(event.pointerId);
 
-        if (Math.abs(state.dragOffsetX) >= 42) {
-            showSlide(state.slide + (state.dragOffsetX < 0 ? 1 : -1), true);
+        const width = ui.carousel.clientWidth || 1;
+        const elapsed = Math.max(performance.now() - state.dragStartTime, 1);
+        const velocity = Math.abs(state.dragOffsetX) / elapsed;
+        const passedDistance = Math.abs(state.dragOffsetX) >= Math.max(38, width * 0.14);
+        const passedVelocity = Math.abs(state.dragOffsetX) >= 18 && velocity >= 0.45;
+
+        // Put transitions back before snapping to a slide.
+        ui.carouselTrack.classList.remove("is-jumping");
+        void ui.carouselTrack.offsetWidth;
+
+        if (passedDistance || passedVelocity) {
+            moveCarousel(state.dragOffsetX < 0 ? 1 : -1, true);
         } else {
-            showSlide(state.slide, true);
+            setCarouselPosition(state.trackIndex, true);
+            restartCarousel();
         }
+
+        state.dragOffsetX = 0;
+    }
+
+    function setupCarousel() {
+        const slides = Array.from(ui.carouselTrack.children);
+        state.slideCount = slides.length;
+        if (state.slideCount < 2) return;
+
+        const firstClone = slides[0].cloneNode(true);
+        const lastClone = slides[state.slideCount - 1].cloneNode(true);
+
+        [firstClone, lastClone].forEach((clone) => {
+            clone.dataset.carouselClone = "true";
+            clone.setAttribute("aria-hidden", "true");
+            clone.removeAttribute("id");
+            clone.querySelectorAll("[id]").forEach((node) => node.removeAttribute("id"));
+        });
+
+        ui.carouselTrack.prepend(lastClone);
+        ui.carouselTrack.append(firstClone);
+        setCarouselPosition(1, false);
+        updateCarouselDots();
     }
 
     function openPayment(packageName) {
@@ -384,18 +549,6 @@ https:/github.com/ridhoae303
         const pageButton = event.target.closest("[data-page]");
         if (pageButton) {
             switchPage(pageButton.dataset.page);
-            return;
-        }
-
-        const carouselStep = event.target.closest("[data-carousel-step]");
-        if (carouselStep) {
-            showSlide(state.slide + Number(carouselStep.dataset.carouselStep), true);
-            return;
-        }
-
-        const carouselDot = event.target.closest("[data-slide]");
-        if (carouselDot) {
-            showSlide(Number(carouselDot.dataset.slide), true);
             return;
         }
 
@@ -421,17 +574,46 @@ https:/github.com/ridhoae303
             setFieldError(ui.statusQuery, ui.statusError, "");
         });
 
+        ui.carousel.querySelectorAll("[data-carousel-step]").forEach((button) => {
+            button.addEventListener("click", (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                moveCarousel(Number(button.dataset.carouselStep), true);
+            });
+        });
+
+        ui.carouselDots.forEach((dot) => {
+            dot.addEventListener("click", (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                showSlide(Number(dot.dataset.slide), true);
+            });
+        });
+
+        ui.carouselTrack.addEventListener("transitionend", finishCarouselMove);
         ui.carousel.addEventListener("pointerdown", beginDrag);
         ui.carousel.addEventListener("pointermove", moveDrag);
         ui.carousel.addEventListener("pointerup", endDrag);
         ui.carousel.addEventListener("pointercancel", endDrag);
+        ui.carousel.addEventListener("lostpointercapture", endDrag);
         ui.carousel.addEventListener("mouseenter", stopCarousel);
         ui.carousel.addEventListener("mouseleave", startCarousel);
         ui.carousel.addEventListener("focusin", stopCarousel);
-        ui.carousel.addEventListener("focusout", startCarousel);
+        ui.carousel.addEventListener("focusout", () => window.setTimeout(startCarousel, 0));
         ui.carousel.addEventListener("keydown", (event) => {
-            if (event.key === "ArrowLeft") showSlide(state.slide - 1, true);
-            if (event.key === "ArrowRight") showSlide(state.slide + 1, true);
+            if (event.key === "ArrowLeft") {
+                event.preventDefault();
+                moveCarousel(-1, true);
+            } else if (event.key === "ArrowRight" || event.key === " ") {
+                event.preventDefault();
+                moveCarousel(1, true);
+            } else if (event.key === "Home") {
+                event.preventDefault();
+                showSlide(0, true);
+            } else if (event.key === "End") {
+                event.preventDefault();
+                showSlide(state.slideCount - 1, true);
+            }
         });
 
         document.addEventListener("visibilitychange", () => {
@@ -445,8 +627,15 @@ https:/github.com/ridhoae303
     }
 
     applyContactConfig();
+    setupCarousel();
     bindEvents();
     showMikrotikError();
-    showSlide(0);
+
+    const initialPage = document.querySelector(".page.is-active");
+    if (initialPage && !reducedMotionQuery.matches) {
+        initialPage.classList.add("is-entering");
+        waitForAnimation(initialPage, 320).then(() => initialPage.classList.remove("is-entering"));
+    }
+
     startCarousel();
 }());
