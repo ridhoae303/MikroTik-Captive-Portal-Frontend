@@ -12,9 +12,9 @@ https:/github.com/ridhoae303
     <meta name="theme-color" content="#f4f7fb">
     <meta name="author" content="Rislam Febriansah Putra; fixed by ridhoae303">
     <title>Zizu Hotspot</title>
-    <link rel="stylesheet" href="assets/css/app.css">
+    <link rel="stylesheet" href="assets/css/app.css?v=7">
 </head>
-<body
+<body class="is-booting"
     data-mikrotik-error="$(error)"
     data-chap-id="$(chap-id)"
     data-chap-challenge="$(chap-challenge)"
@@ -25,7 +25,7 @@ https:/github.com/ridhoae303
 
         <aside class="side-nav" id="sideNav" aria-label="Navigasi utama">
             <div class="brand side-nav__brand">
-                <span class="brand__mark" aria-hidden="true">Z</span>
+                <span class="brand__mark" aria-hidden="true"><svg><use href="#icon-wifi"></use></svg></span>
                 <span>
                     <strong>Zizu Hotspot</strong>
                     <small>Jaringan internet</small>
@@ -75,7 +75,7 @@ https:/github.com/ridhoae303
                 </button>
 
                 <div class="brand topbar__brand">
-                    <span class="brand__mark" aria-hidden="true">Z</span>
+                    <span class="brand__mark" aria-hidden="true"><svg><use href="#icon-wifi"></use></svg></span>
                     <span>
                         <strong>Zizu Hotspot</strong>
                         <small>Wi-Fi access portal</small>
@@ -134,6 +134,7 @@ https:/github.com/ridhoae303
                                     <button class="carousel__dot" type="button" data-slide="1" aria-label="Tampilkan promo 2"></button>
                                     <button class="carousel__dot" type="button" data-slide="2" aria-label="Tampilkan promo 3"></button>
                                 </div>
+                                <span class="carousel__progress" aria-hidden="true"><span></span></span>
                             </div>
 
                             <div class="quick-actions" aria-label="Akses cepat">
@@ -421,6 +422,6 @@ https:/github.com/ridhoae303
 
     <script src="assets/js/config.js"></script>
     <script src="assets/js/md5.js"></script>
-    <script src="assets/js/app.js"></script>
+    <script src="assets/js/app.js?v=7"></script>
 </body>
 </html>

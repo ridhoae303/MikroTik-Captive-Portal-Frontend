@@ -4,6 +4,8 @@ A cleaned-up MikroTik hotspot login portal that actually behaves like a proper W
 
 The original layout had a solid idea behind it, but a few things were fighting the browser: duplicated navigation, fake status checks, native Chrome alerts, a slider that could not really slide, and some pretty heavy UI effects. This build sorts those out while keeping the project lightweight and easy to deploy.
 
+This project is a forked MikroTik captive portal frontend, not a full hotspot management system like Mikhmon. The login flow needs an actual MikroTik server and backend configuration to work. Since I do not own or control the original server, this repository currently focuses on the UI, responsiveness, animations, and integration-ready structure.
+
 ## So, what got fixed?
 
 - The default page no longer keeps stretching downward for no good reason.
