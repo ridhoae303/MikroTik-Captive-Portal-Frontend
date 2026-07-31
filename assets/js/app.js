@@ -165,15 +165,16 @@ https:/github.com/ridhoae303
             currentPage.classList.remove("is-active", "is-leaving", "is-entering");
         }
 
+        // Stage the page off-screen before unhiding it. Otherwise the browser can paint
+        // one normal frame first, which looks like a nasty flash before the animation.
+        nextPage.classList.remove("is-entering", "is-leaving");
+        nextPage.classList.add("is-active", "is-preparing");
         nextPage.hidden = false;
-        nextPage.classList.add("is-active");
         scrollPageToTop();
 
-        // Two paint frames make the browser commit the hidden -> visible state first.
-        // Without this, some captive portal WebViews skip straight to the final frame.
-        nextPage.classList.remove("is-entering");
         await nextPaint();
         nextPage.classList.add("is-entering");
+        nextPage.classList.remove("is-preparing");
         await waitForAnimation(nextPage, 780);
         await wait(320);
         nextPage.classList.remove("is-entering");
@@ -747,12 +748,17 @@ https:/github.com/ridhoae303
     showMikrotikError();
 
     const initialPage = document.querySelector(".page.is-active");
+    initialPage?.classList.add("is-preparing");
+
     nextPaint().then(() => {
+        // Arm the keyframes before dropping the boot guard. Nothing gets a chance
+        // to appear at full opacity between those two states.
+        initialPage?.classList.add("is-entering");
         ui.body.classList.remove("is-booting");
         ui.body.classList.add("is-ready");
+        initialPage?.classList.remove("is-preparing");
 
         if (!initialPage) return null;
-        initialPage.classList.add("is-entering");
         return waitForAnimation(initialPage, 780).then(() => wait(320));
     }).then(() => {
         initialPage?.classList.remove("is-entering");
