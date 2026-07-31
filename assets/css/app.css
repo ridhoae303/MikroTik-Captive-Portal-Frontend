@@ -1451,6 +1451,15 @@ body.is-booting .site-footer {
     opacity: 0;
 }
 
+/* Keep the first paint hidden so the entrance motion never replays after a flash. */
+body.is-booting .page.is-active,
+.page.is-preparing {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translate3d(0, 20px, 0) scale(0.992);
+}
+
 body.is-ready .topbar {
     animation: shell-topbar-in 560ms var(--motion-out) backwards;
 }
