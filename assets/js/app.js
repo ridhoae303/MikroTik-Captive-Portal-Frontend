@@ -8,7 +8,6 @@ https:/github.com/ridhoae303
 
     const config = window.HOTSPOT_CONFIG || {};
     const wideNavQuery = window.matchMedia("(min-width: 760px)");
-    const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     const ui = {
         body: document.body,
@@ -49,6 +48,8 @@ https:/github.com/ridhoae303
         slideCount: 0,
         trackIndex: 1,
         carouselTimer: 0,
+        carouselMoveTimer: 0,
+        carouselNextDelay: 5200,
         carouselBusy: false,
         queuedCarouselStep: 0,
         dragStartX: 0,
@@ -56,8 +57,12 @@ https:/github.com/ridhoae303
         dragOffsetX: 0,
         dragMoved: false,
         dragging: false,
-        toastTimer: 0
+        navCloseTimer: 0,
+        toastTimer: 0,
+        toastHideTimer: 0
     };
+
+    const dialogCloseTimers = new WeakMap();
 
     function normalizeCode(value) {
         return value.toUpperCase().replace(/\s+/g, "").replace(/[^A-Z0-9_-]/g, "");
@@ -69,32 +74,58 @@ https:/github.com/ridhoae303
 
     function openNav() {
         if (wideNavQuery.matches) return;
-        ui.sideNav.classList.add("is-open");
+
+        window.clearTimeout(state.navCloseTimer);
         ui.navBackdrop.hidden = false;
+        ui.menuButton.classList.add("is-active");
         ui.menuButton.setAttribute("aria-expanded", "true");
         document.body.style.overflow = "hidden";
+
+        // Let the backdrop exist for one frame before the drawer starts moving.
+        window.requestAnimationFrame(() => {
+            if (ui.menuButton.getAttribute("aria-expanded") !== "true") return;
+            ui.navBackdrop.classList.add("is-visible");
+            ui.sideNav.classList.add("is-open");
+        });
     }
 
     function closeNav() {
         ui.sideNav.classList.remove("is-open");
-        ui.navBackdrop.hidden = true;
+        ui.navBackdrop.classList.remove("is-visible");
+        ui.menuButton.classList.remove("is-active");
         ui.menuButton.setAttribute("aria-expanded", "false");
         document.body.style.overflow = "";
+
+        window.clearTimeout(state.navCloseTimer);
+        state.navCloseTimer = window.setTimeout(() => {
+            if (!ui.sideNav.classList.contains("is-open")) ui.navBackdrop.hidden = true;
+        }, 480);
     }
 
     function waitForAnimation(element, timeoutMs) {
         return new Promise((resolve) => {
             let settled = false;
-            const finish = () => {
+            const finish = (event) => {
+                if (event && event.target !== element) return;
                 if (settled) return;
                 settled = true;
                 element.removeEventListener("animationend", finish);
                 resolve();
             };
 
-            element.addEventListener("animationend", finish, { once: true });
+            element.addEventListener("animationend", finish);
             window.setTimeout(finish, timeoutMs);
         });
+    }
+
+    function nextPaint() {
+        return new Promise((resolve) => {
+            window.requestAnimationFrame(() => window.requestAnimationFrame(resolve));
+        });
+    }
+
+    function wait(milliseconds) {
+        return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
     }
 
     function scrollPageToTop() {
@@ -124,14 +155,12 @@ https:/github.com/ridhoae303
         state.pageTransitioning = true;
         syncPageNavigation(pageName);
         closeNav();
-
-        if (currentPage && !reducedMotionQuery.matches) {
-            currentPage.classList.remove("is-entering");
-            currentPage.classList.add("is-leaving");
-            await waitForAnimation(currentPage, 220);
-        }
+        if (state.page === "home" && pageName !== "home") stopCarousel();
 
         if (currentPage) {
+            currentPage.classList.remove("is-entering");
+            currentPage.classList.add("is-leaving");
+            await waitForAnimation(currentPage, 360);
             currentPage.hidden = true;
             currentPage.classList.remove("is-active", "is-leaving", "is-entering");
         }
@@ -140,18 +169,19 @@ https:/github.com/ridhoae303
         nextPage.classList.add("is-active");
         scrollPageToTop();
 
-        if (!reducedMotionQuery.matches) {
-            // Restarting the class makes the animation reliable even after rapid page changes.
-            nextPage.classList.remove("is-entering");
-            void nextPage.offsetWidth;
-            nextPage.classList.add("is-entering");
-            await waitForAnimation(nextPage, 320);
-            nextPage.classList.remove("is-entering");
-        }
+        // Two paint frames make the browser commit the hidden -> visible state first.
+        // Without this, some captive portal WebViews skip straight to the final frame.
+        nextPage.classList.remove("is-entering");
+        await nextPaint();
+        nextPage.classList.add("is-entering");
+        await waitForAnimation(nextPage, 780);
+        await wait(320);
+        nextPage.classList.remove("is-entering");
 
         state.page = pageName;
         document.title = `${nextPage.dataset.title || "Hotspot"} | Zizu Hotspot`;
         state.pageTransitioning = false;
+        if (state.page === "home") startCarousel();
 
         if (state.pendingPage) {
             const pendingPage = state.pendingPage;
@@ -170,25 +200,84 @@ https:/github.com/ridhoae303
         runPageTransition(pageName);
     }
 
-    function showDialog(title, message) {
-        ui.dialogTitle.textContent = title;
-        ui.dialogCopy.textContent = message;
-        if (typeof ui.appDialog.showModal === "function") {
-            ui.appDialog.showModal();
+    function presentDialog(dialog) {
+        window.clearTimeout(dialogCloseTimers.get(dialog));
+        dialog.classList.remove("is-closing");
+
+        if (typeof dialog.showModal === "function") {
+            if (!dialog.open) dialog.showModal();
             return;
         }
 
-        // Old WebViews exist in the wild. This fallback is ugly but still stays inside the page.
-        ui.appDialog.setAttribute("open", "");
+        // Old WebViews still get the same in-page UI, just without native modal plumbing.
+        dialog.setAttribute("open", "");
+    }
+
+    function closeDialogAnimated(dialog) {
+        if (!dialog || dialog.classList.contains("is-closing")) return;
+        if (!dialog.open && !dialog.hasAttribute("open")) return;
+
+        dialog.classList.add("is-closing");
+        const timer = window.setTimeout(() => {
+            dialog.classList.remove("is-closing");
+            if (typeof dialog.close === "function" && dialog.open) dialog.close();
+            else dialog.removeAttribute("open");
+            dialogCloseTimers.delete(dialog);
+        }, 250);
+        dialogCloseTimers.set(dialog, timer);
+    }
+
+    function setupDialogMotion(dialog) {
+        dialog.addEventListener("click", (event) => {
+            const closeButton = event.target.closest('[value="close"]');
+            if (closeButton) {
+                event.preventDefault();
+                closeDialogAnimated(dialog);
+                return;
+            }
+
+            if (event.target === dialog) closeDialogAnimated(dialog);
+        });
+
+        dialog.addEventListener("cancel", (event) => {
+            event.preventDefault();
+            closeDialogAnimated(dialog);
+        });
+
+        dialog.addEventListener("close", () => {
+            window.clearTimeout(dialogCloseTimers.get(dialog));
+            dialogCloseTimers.delete(dialog);
+            dialog.classList.remove("is-closing");
+        });
+    }
+
+    function showDialog(title, message) {
+        ui.dialogTitle.textContent = title;
+        ui.dialogCopy.textContent = message;
+        presentDialog(ui.appDialog);
+    }
+
+    function hideToast() {
+        window.clearTimeout(state.toastTimer);
+        ui.toast.classList.remove("is-visible");
+        window.clearTimeout(state.toastHideTimer);
+        state.toastHideTimer = window.setTimeout(() => {
+            if (!ui.toast.classList.contains("is-visible")) ui.toast.hidden = true;
+        }, 380);
     }
 
     function showToast(message) {
         window.clearTimeout(state.toastTimer);
+        window.clearTimeout(state.toastHideTimer);
         ui.toast.textContent = message;
         ui.toast.hidden = false;
-        state.toastTimer = window.setTimeout(() => {
-            ui.toast.hidden = true;
-        }, 3600);
+        ui.toast.classList.remove("is-visible");
+
+        window.requestAnimationFrame(() => {
+            ui.toast.classList.add("is-visible");
+        });
+
+        state.toastTimer = window.setTimeout(hideToast, 3600);
     }
 
     function setFieldError(input, errorNode, message) {
@@ -321,6 +410,9 @@ https:/github.com/ridhoae303
         });
 
         ui.statusResult.hidden = false;
+        ui.statusResult.classList.remove("is-revealed");
+        void ui.statusResult.offsetWidth;
+        ui.statusResult.classList.add("is-revealed");
     }
 
     async function parseJsonResponse(response) {
@@ -382,13 +474,20 @@ https:/github.com/ridhoae303
         });
     }
 
+    function updateCarouselSlides(trackIndex = state.trackIndex) {
+        Array.from(ui.carouselTrack.children).forEach((slide, index) => {
+            slide.classList.toggle("is-current", index === trackIndex);
+        });
+    }
+
     function setCarouselPosition(trackIndex, animate = true, dragPercent = 0) {
         state.trackIndex = trackIndex;
         ui.carouselTrack.classList.toggle("is-jumping", !animate);
+        updateCarouselSlides(trackIndex);
         ui.carouselTrack.style.transform = `translate3d(${(-trackIndex * 100) + dragPercent}%, 0, 0)`;
 
         if (!animate) {
-            // Force the no-animation jump to land before transitions are switched back on.
+            // Land the clone jump first, then quietly put the transition back.
             void ui.carouselTrack.offsetWidth;
             window.requestAnimationFrame(() => ui.carouselTrack.classList.remove("is-jumping"));
         }
@@ -402,40 +501,63 @@ https:/github.com/ridhoae303
         }
     }
 
+    function scheduleCarousel(delay = 5200) {
+        stopCarousel();
+        if (document.hidden || state.dragging || state.pageTransitioning || state.page !== "home") return;
+
+        ui.carousel.style.setProperty("--carousel-delay", `${delay}ms`);
+        void ui.carousel.offsetWidth;
+        ui.carousel.classList.add("is-autoplaying");
+        state.carouselTimer = window.setTimeout(() => moveCarousel(1), delay);
+    }
+
     function finishCarouselMove(event) {
         if (event && event.target !== ui.carouselTrack) return;
+        window.clearTimeout(state.carouselMoveTimer);
+        state.carouselMoveTimer = 0;
         normalizeCarouselAfterLoop();
         state.carouselBusy = false;
+        ui.carousel.classList.remove("is-moving");
 
         if (state.queuedCarouselStep) {
             const queuedStep = state.queuedCarouselStep;
             state.queuedCarouselStep = 0;
-            window.requestAnimationFrame(() => moveCarousel(queuedStep));
+            window.requestAnimationFrame(() => moveCarousel(queuedStep, true));
+            return;
         }
+
+        const nextDelay = state.carouselNextDelay;
+        state.carouselNextDelay = 5200;
+        scheduleCarousel(nextDelay);
     }
 
     function moveCarousel(step, userInitiated = false) {
         if (!state.slideCount || !step) return;
         const direction = step > 0 ? 1 : -1;
 
-        if (userInitiated) restartCarousel();
+        stopCarousel();
+        state.carouselNextDelay = userInitiated ? 6200 : 5200;
         if (state.carouselBusy) {
             state.queuedCarouselStep = direction;
             return;
         }
 
         state.carouselBusy = true;
+        ui.carousel.classList.add("is-moving");
         state.slide = (state.slide + direction + state.slideCount) % state.slideCount;
         updateCarouselDots();
         setCarouselPosition(state.trackIndex + direction, true);
+
+        // A few old WebViews occasionally drop transitionend. Don't leave the slider locked.
+        window.clearTimeout(state.carouselMoveTimer);
+        state.carouselMoveTimer = window.setTimeout(() => finishCarouselMove(), 1000);
     }
 
     function showSlide(index, userInitiated = false) {
         if (!state.slideCount) return;
         const target = (index + state.slideCount) % state.slideCount;
         if (target === state.slide) {
-            setCarouselPosition(state.trackIndex, true);
-            if (userInitiated) restartCarousel();
+            scheduleCarousel(userInitiated ? 6200 : 5200);
             return;
         }
 
@@ -448,20 +570,13 @@ https:/github.com/ridhoae303
     }
 
     function startCarousel() {
-        const carouselHasFocus = ui.carousel.contains(document.activeElement);
-        if (reducedMotionQuery.matches || document.hidden || ui.carousel.matches(":hover") || carouselHasFocus) return;
-        window.clearInterval(state.carouselTimer);
-        state.carouselTimer = window.setInterval(() => moveCarousel(1), 5500);
+        scheduleCarousel();
     }
 
     function stopCarousel() {
-        window.clearInterval(state.carouselTimer);
+        window.clearTimeout(state.carouselTimer);
         state.carouselTimer = 0;
-    }
-
-    function restartCarousel() {
-        stopCarousel();
-        startCarousel();
+        ui.carousel.classList.remove("is-autoplaying");
     }
 
     function beginDrag(event) {
@@ -508,8 +623,10 @@ https:/github.com/ridhoae303
         if (passedDistance || passedVelocity) {
             moveCarousel(state.dragOffsetX < 0 ? 1 : -1, true);
         } else {
+            state.carouselBusy = true;
             setCarouselPosition(state.trackIndex, true);
-            restartCarousel();
+            window.clearTimeout(state.carouselMoveTimer);
+            state.carouselMoveTimer = window.setTimeout(() => finishCarouselMove(), 1000);
         }
 
         state.dragOffsetX = 0;
@@ -538,11 +655,7 @@ https:/github.com/ridhoae303
 
     function openPayment(packageName) {
         ui.paymentTitle.textContent = `QRIS \u00b7 ${packageName}`;
-        if (typeof ui.paymentDialog.showModal === "function") {
-            ui.paymentDialog.showModal();
-        } else {
-            ui.paymentDialog.setAttribute("open", "");
-        }
+        presentDialog(ui.paymentDialog);
     }
 
     function handleDocumentClick(event) {
@@ -563,6 +676,7 @@ https:/github.com/ridhoae303
         ui.loginForm.addEventListener("submit", prepareLogin);
         ui.statusForm.addEventListener("submit", checkSubscription);
         document.addEventListener("click", handleDocumentClick);
+        [ui.appDialog, ui.paymentDialog].forEach(setupDialogMotion);
 
         ui.voucherCode.addEventListener("input", () => {
             ui.voucherCode.value = normalizeCode(ui.voucherCode.value);
@@ -596,11 +710,12 @@ https:/github.com/ridhoae303
         ui.carousel.addEventListener("pointerup", endDrag);
         ui.carousel.addEventListener("pointercancel", endDrag);
         ui.carousel.addEventListener("lostpointercapture", endDrag);
-        ui.carousel.addEventListener("mouseenter", stopCarousel);
-        ui.carousel.addEventListener("mouseleave", startCarousel);
         ui.carousel.addEventListener("focusin", stopCarousel);
-        ui.carousel.addEventListener("focusout", () => window.setTimeout(startCarousel, 0));
+        ui.carousel.addEventListener("focusout", () => window.setTimeout(() => scheduleCarousel(6200), 0));
         ui.carousel.addEventListener("keydown", (event) => {
+            // Let focused buttons handle Space themselves so one press never moves twice.
+            if (event.key === " " && event.target !== ui.carousel) return;
+
             if (event.key === "ArrowLeft") {
                 event.preventDefault();
                 moveCarousel(-1, true);
@@ -632,10 +747,15 @@ https:/github.com/ridhoae303
     showMikrotikError();
 
     const initialPage = document.querySelector(".page.is-active");
-    if (initialPage && !reducedMotionQuery.matches) {
-        initialPage.classList.add("is-entering");
-        waitForAnimation(initialPage, 320).then(() => initialPage.classList.remove("is-entering"));
-    }
+    nextPaint().then(() => {
+        ui.body.classList.remove("is-booting");
+        ui.body.classList.add("is-ready");
 
-    startCarousel();
+        if (!initialPage) return null;
+        initialPage.classList.add("is-entering");
+        return waitForAnimation(initialPage, 780).then(() => wait(320));
+    }).then(() => {
+        initialPage?.classList.remove("is-entering");
+        startCarousel();
+    });
 }());
