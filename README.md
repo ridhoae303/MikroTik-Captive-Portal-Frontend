@@ -1,5 +1,17 @@
 # Zizu MikroTik Hotspot Portal
 
+**WARNING: READ THIS FIRST**
+
+This project is NOT Mikhmon. It is NOT a full hotspot management system. It is a frontend-only portal.
+
+If you are looking for Mikhmon, you are in the wrong place.
+
+If you plan to compare this project with Mikhmon, stop right now and read [COMPARISON.md](COMPARISON.md) first. If you still want to compare after reading that, the problem is not my code.
+
+Now, proceed.
+
+---
+
 A cleaned-up MikroTik hotspot login portal that actually behaves like a proper Wi-Fi captive portal instead of a stretched-out frontend demo.
 
 The original layout had a solid idea behind it, but a few things were fighting the browser: duplicated navigation, fake status checks, native Chrome alerts, a slider that could not really slide, and some pretty heavy UI effects. This build sorts those out while keeping the project lightweight and easy to deploy.
